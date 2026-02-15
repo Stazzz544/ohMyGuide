@@ -1,11 +1,45 @@
-import { Stack } from "expo-router";
-import { JSX } from "react";
+import { Stack } from 'expo-router';
+import { JSX, useEffect } from 'react';
+import { GestureHandlerRootView } from 'react-native-gesture-handler';
+import { StatusBar } from 'expo-status-bar';
+import { ThemeProvider, useTheme } from '@app/shared/theme';
+import { tourStore } from '@app/entities/tour';
+import { settingsModel } from '@app/features/ai-settings';
+
+// Внутренний компонент для доступа к теме
+const RootNavigation = (): JSX.Element => {
+  const { isDark, colors } = useTheme();
+
+  // Загрузка данных при старте приложения
+  useEffect(() => {
+    tourStore.toursLoaded();
+    settingsModel.settingsLoaded();
+  }, []);
+
+  return (
+    <>
+      <StatusBar style={isDark ? 'light' : 'dark'} />
+      <Stack
+        screenOptions={{
+          headerStyle: { backgroundColor: colors.headerBg },
+          headerTintColor: colors.textPrimary,
+          headerTitleStyle: { fontWeight: '600' },
+          contentStyle: { backgroundColor: colors.bgPrimary },
+        }}
+      >
+        <Stack.Screen name="(tabs)" options={{ headerShown: false }} />
+        <Stack.Screen name="tour/[id]" options={{ title: 'Экскурсия' }} />
+      </Stack>
+    </>
+  );
+};
 
 export default function RootLayout(): JSX.Element {
   return (
-    <Stack>
-      <Stack.Screen name="(tabs)" options={{ headerShown: false }} />
-      <Stack.Screen name="details" options={{ title: "Подробности" }} />
-    </Stack>
+    <GestureHandlerRootView style={{ flex: 1 }}>
+      <ThemeProvider>
+        <RootNavigation />
+      </ThemeProvider>
+    </GestureHandlerRootView>
   );
 }
