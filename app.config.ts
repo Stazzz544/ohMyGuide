@@ -6,6 +6,12 @@ export default ({ config }: ConfigContext): ExpoConfig => ({
   slug: 'OhMyGuide',
   scheme: 'OhMyGuide',
   version: '1.0.0',
+  owner: 'stas544',
+  extra: {
+    eas: {
+      projectId: '9a0d052c-e63c-4233-a77c-f163f616b71a',
+    },
+  },
   orientation: 'portrait',
   icon: './assets/icon.png',
   userInterfaceStyle: 'automatic',
@@ -19,6 +25,7 @@ export default ({ config }: ConfigContext): ExpoConfig => ({
     supportsTablet: true,
   },
   android: {
+    package: 'com.ohmyguide.app',
     adaptiveIcon: {
       foregroundImage: './assets/adaptive-icon.png',
       backgroundColor: '#ffffff',

@@ -24,3 +24,15 @@ adb reverse tcp:19006 tcp:19006
 
 
 npx expo start --clear
+
+
+Вариант A: Локальная сборка
+
+
+cd /e/cooding/mobile/test-android-app/OhMyGuide
+npx expo run:android --variant release
+Вариант B: EAS Build (рекомендуется для production)
+
+
+cd /e/cooding/mobile/test-android-app/OhMyGuide
+eas build --profile preview --platform android
