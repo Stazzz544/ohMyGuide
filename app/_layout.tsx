@@ -1,3 +1,4 @@
+import '@app/shared/lib/polyfills'; // ВАЖНО: ПЕРВЫМ!
 import { Stack } from 'expo-router';
 import { JSX, useEffect } from 'react';
 import { GestureHandlerRootView } from 'react-native-gesture-handler';

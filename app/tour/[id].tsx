@@ -7,6 +7,7 @@ import { useTheme } from '@app/shared/theme';
 import { tourStore } from '@app/entities/tour';
 import { SpeechControls } from '@app/features/speech-player';
 import { shareModel } from '@app/features/share-tour';
+import { ExportButton } from '@app/features/export-tour';
 import { Button } from '@app/shared/ui';
 
 export default function TourDetailScreen(): JSX.Element {
@@ -61,12 +62,26 @@ export default function TourDetailScreen(): JSX.Element {
 
       <View style={[styles.controls, { backgroundColor: colors.bgPrimary, borderTopColor: colors.border }]}>
         <SpeechControls text={tour.generatedText} />
-        <Button
-          label="Поделиться"
-          variant="outline"
-          onPress={() => shareModel.sharePressed({ placeName: tour.placeName, text: tour.generatedText })}
-          icon={<Ionicons name="share-outline" size={18} color={colors.primary} />}
-        />
+        <View style={styles.buttonsRow}>
+          <Button
+            label="Поделиться"
+            variant="outline"
+            onPress={() => shareModel.sharePressed({ placeName: tour.placeName, text: tour.generatedText })}
+            icon={<Ionicons name="share-outline" size={18} color={colors.primary} />}
+            style={{ flex: 1 }}
+          />
+          <ExportButton
+            tourParams={{
+              placeName: tour.placeName,
+              generatedText: tour.generatedText,
+              createdAt: tour.createdAt,
+            }}
+            format="txt"
+            label="Экспорт"
+            variant="outline"
+            style={{ flex: 1 }}
+          />
+        </View>
       </View>
     </View>
   );
@@ -115,5 +130,9 @@ const styles = StyleSheet.create({
     padding: 16,
     gap: 12,
     borderTopWidth: 1,
+  },
+  buttonsRow: {
+    flexDirection: 'row',
+    gap: 12,
   },
 });
