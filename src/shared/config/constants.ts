@@ -8,6 +8,10 @@ export const MIN_SPEECH_RATE = 0.5;
 export const MAX_SPEECH_RATE = 2.0;
 export const SPEECH_LANGUAGE = 'ru-RU';
 
+// TTS Chunking
+export const MAX_CHUNK_SIZE = 3500; // Максимальный размер чанка для expo-speech
+export const MIN_CHUNK_SIZE = 100; // Минимальный размер последнего чанка
+
 // Хранилище
 export const STORAGE_KEYS = {
   TOURS: 'ohmyguide_tours',

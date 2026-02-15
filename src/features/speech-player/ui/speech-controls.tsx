@@ -1,10 +1,11 @@
-import { View, StyleSheet } from 'react-native';
-import { JSX } from 'react';
+import { View, Text, StyleSheet } from 'react-native';
+import { JSX, useEffect } from 'react';
 import { useUnit } from 'effector-react';
 import { Ionicons } from '@expo/vector-icons';
 import { Button, SpeedSlider } from '@app/shared/ui';
 import { useTheme } from '@app/shared/theme';
 import { speechModel } from '../model/speech-model';
+import { VoiceSelector } from './voice-selector';
 
 type SpeechControlsProps = {
   text: string;
@@ -12,13 +13,19 @@ type SpeechControlsProps = {
 
 export const SpeechControls = ({ text }: SpeechControlsProps): JSX.Element => {
   const { colors } = useTheme();
-  const { isSpeaking, speechRate, onPlay, onStop, onRateChange } = useUnit({
+  const { isSpeaking, speechRate, progress, onPlay, onStop, onRateChange } = useUnit({
     isSpeaking: speechModel.$isSpeaking,
     speechRate: speechModel.$speechRate,
+    progress: speechModel.$progress,
     onPlay: speechModel.playPressed,
     onStop: speechModel.stopPressed,
     onRateChange: speechModel.rateChanged,
   });
+
+  // Загрузить доступные голоса при монтировании компонента
+  useEffect(() => {
+    speechModel.loadVoicesFx();
+  }, []);
 
   return (
     <View style={styles.container}>
@@ -38,7 +45,29 @@ export const SpeechControls = ({ text }: SpeechControlsProps): JSX.Element => {
           />
         )}
       </View>
+
+      {isSpeaking && progress > 0 && (
+        <View style={styles.progressContainer}>
+          <Text style={[styles.progressText, { color: colors.textSecondary }]}>
+            Прогресс: {progress}%
+          </Text>
+          <View style={[styles.progressBar, { backgroundColor: colors.border }]}>
+            <View
+              style={[
+                styles.progressFill,
+                {
+                  backgroundColor: colors.primary,
+                  width: `${progress}%`,
+                },
+              ]}
+            />
+          </View>
+        </View>
+      )}
+
       <SpeedSlider value={speechRate} onValueChange={onRateChange} />
+
+      <VoiceSelector />
     </View>
   );
 };
@@ -50,5 +79,21 @@ const styles = StyleSheet.create({
   buttons: {
     flexDirection: 'row',
     gap: 8,
+  },
+  progressContainer: {
+    marginVertical: 4,
+  },
+  progressText: {
+    fontSize: 12,
+    marginBottom: 6,
+  },
+  progressBar: {
+    height: 6,
+    borderRadius: 3,
+    overflow: 'hidden',
+  },
+  progressFill: {
+    height: '100%',
+    borderRadius: 3,
   },
 });
