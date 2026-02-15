@@ -4,12 +4,20 @@ import { storage } from '@app/shared/lib';
 import { STORAGE_KEYS } from '@app/shared/config';
 
 import type { Tour, TourId, CachedTour } from './types';
+import type { FolderId } from '@app/entities/folder';
 
 // --- Effects (работа с AsyncStorage) ---
 
 const loadToursFx = createEffect(async (): Promise<Tour[]> => {
   const tours = await storage.get<Tour[]>(STORAGE_KEYS.TOURS);
-  return tours ?? [];
+  if (!tours) {
+    return [];
+  }
+  // Миграция: добавить folderId для старых туров
+  return tours.map((tour) => ({
+    ...tour,
+    folderId: tour.folderId ?? null,
+  }));
 });
 
 const saveToursFx = createEffect(async (tours: Tour[]): Promise<void> => {
@@ -32,8 +40,13 @@ const $isLoading = createStore<boolean>(false);
 
 // --- Events ---
 
-const tourSaved = createEvent<{ placeName: string; generatedText: string }>();
+const tourSaved = createEvent<{
+  placeName: string;
+  generatedText: string;
+  folderId?: FolderId | null;
+}>();
 const tourDeleted = createEvent<TourId>();
+const tourMovedToFolder = createEvent<{ tourId: TourId; folderId: FolderId | null }>();
 const toursLoaded = createEvent();
 const cachedTourUpdated = createEvent<CachedTour>();
 const toursRefreshed = createEvent();
@@ -55,12 +68,13 @@ sample({
 sample({
   clock: tourSaved,
   source: $tours,
-  fn: (tours, { placeName, generatedText }) => [
+  fn: (tours, { placeName, generatedText, folderId = null }) => [
     {
       id: uuidv4(),
       placeName,
       generatedText,
       createdAt: new Date().toISOString(),
+      folderId,
     },
     ...tours,
   ],
@@ -72,6 +86,15 @@ sample({
   clock: tourDeleted,
   source: $tours,
   fn: (tours, id) => tours.filter((t) => t.id !== id),
+  target: $tours,
+});
+
+// Перемещение тура в папку
+sample({
+  clock: tourMovedToFolder,
+  source: $tours,
+  fn: (tours, { tourId, folderId }) =>
+    tours.map((t) => (t.id === tourId ? { ...t, folderId } : t)),
   target: $tours,
 });
 
@@ -123,6 +146,7 @@ export const tourStore = {
   $isLoading,
   tourSaved,
   tourDeleted,
+  tourMovedToFolder,
   toursLoaded,
   cachedTourUpdated,
   toursRefreshed,

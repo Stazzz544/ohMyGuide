@@ -1,5 +1,5 @@
 import { View, ScrollView, Text, StyleSheet } from 'react-native';
-import { JSX } from 'react';
+import { JSX, useMemo } from 'react';
 import { useUnit } from 'effector-react';
 import { Ionicons } from '@expo/vector-icons';
 import { TourSkeleton, Button } from '@app/shared/ui';
@@ -9,14 +9,18 @@ import { SpeechControls } from '@app/features/speech-player';
 import { generateModel } from '@app/features/generate-tour';
 import { saveModel } from '@app/features/save-tour';
 import { shareModel } from '@app/features/share-tour';
+import { createFolderPickerModel, FolderPickerModal } from '@app/features/folder-picker';
 
 export const TourViewer = (): JSX.Element => {
   const { colors } = useTheme();
-  const { generatedText, placeName, isGenerating, isPrepareMode } = useUnit({
+  const folderPickerModel = useMemo(() => createFolderPickerModel(), []);
+
+  const { generatedText, placeName, isGenerating, isPrepareMode, folderPickerVisible } = useUnit({
     generatedText: generateModel.$generatedText,
     placeName: generateModel.$placeName,
     isGenerating: generateModel.$isGenerating,
     isPrepareMode: generateModel.$isPrepareMode,
+    folderPickerVisible: saveModel.$folderPickerVisible,
   });
 
   // Skeleton при загрузке
@@ -53,41 +57,50 @@ export const TourViewer = (): JSX.Element => {
 
   // Сгенерированный тур
   return (
-    <View style={styles.container}>
-      <View style={[styles.textCard, { backgroundColor: colors.bgCard, borderColor: colors.border }]}>
-        <ScrollView
-          style={styles.textScroll}
-          contentContainerStyle={styles.textContent}
-          showsVerticalScrollIndicator={true}
-          nestedScrollEnabled={true}
-        >
-          <Text style={[styles.tourText, { color: colors.textPrimary }]}>
-            {generatedText}
-          </Text>
-        </ScrollView>
+    <>
+      <View style={styles.container}>
+        <View style={[styles.textCard, { backgroundColor: colors.bgCard, borderColor: colors.border }]}>
+          <ScrollView
+            style={styles.textScroll}
+            contentContainerStyle={styles.textContent}
+            showsVerticalScrollIndicator={true}
+            nestedScrollEnabled={true}
+          >
+            <Text style={[styles.tourText, { color: colors.textPrimary }]}>
+              {generatedText}
+            </Text>
+          </ScrollView>
+        </View>
+
+        <View style={styles.controlsSection}>
+          <SpeechControls text={generatedText} />
+        </View>
+
+        <View style={styles.actions}>
+          <Button
+            label="Сохранить"
+            onPress={() => saveModel.saveTourPressed({ placeName, generatedText })}
+            appearance="success"
+            icon={<Ionicons name="bookmark-outline" size={18} color="#ffffff" />}
+            style={styles.actionButton}
+          />
+          <Button
+            label="Поделиться"
+            variant="outline"
+            onPress={() => shareModel.sharePressed({ placeName, text: generatedText })}
+            icon={<Ionicons name="share-outline" size={18} color={colors.primary} />}
+            style={styles.actionButton}
+          />
+        </View>
       </View>
 
-      <View style={styles.controlsSection}>
-        <SpeechControls text={generatedText} />
-      </View>
-
-      <View style={styles.actions}>
-        <Button
-          label="Сохранить"
-          onPress={() => saveModel.saveTourPressed({ placeName, generatedText })}
-          appearance="success"
-          icon={<Ionicons name="bookmark-outline" size={18} color="#ffffff" />}
-          style={styles.actionButton}
-        />
-        <Button
-          label="Поделиться"
-          variant="outline"
-          onPress={() => shareModel.sharePressed({ placeName, text: generatedText })}
-          icon={<Ionicons name="share-outline" size={18} color={colors.primary} />}
-          style={styles.actionButton}
-        />
-      </View>
-    </View>
+      <FolderPickerModal
+        visible={folderPickerVisible}
+        model={folderPickerModel}
+        onClose={saveModel.folderPickerClosed}
+        onSelect={saveModel.folderSelected}
+      />
+    </>
   );
 };
 

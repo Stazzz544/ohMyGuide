@@ -15,6 +15,7 @@ export const MIN_CHUNK_SIZE = 100; // Минимальный размер пос
 // Хранилище
 export const STORAGE_KEYS = {
   TOURS: 'ohmyguide_tours',
+  FOLDERS: 'ohmyguide_folders',
   LAST_TOUR_CACHE: 'ohmyguide_last_tour',
   THEME_OVERRIDE: 'ohmyguide_theme',
   AI_PROVIDER: 'ohmyguide_ai_provider',

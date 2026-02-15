@@ -5,6 +5,7 @@ import { GestureHandlerRootView } from 'react-native-gesture-handler';
 import { StatusBar } from 'expo-status-bar';
 import { ThemeProvider, useTheme } from '@app/shared/theme';
 import { tourStore } from '@app/entities/tour';
+import { folderStore } from '@app/entities/folder';
 import { settingsModel } from '@app/features/ai-settings';
 
 // Внутренний компонент для доступа к теме
@@ -13,6 +14,7 @@ const RootNavigation = (): JSX.Element => {
 
   // Загрузка данных при старте приложения
   useEffect(() => {
+    folderStore.foldersLoaded();
     tourStore.toursLoaded();
     settingsModel.settingsLoaded();
   }, []);
