@@ -5,13 +5,14 @@ import { Ionicons } from '@expo/vector-icons';
 import { Button, SpeedSlider } from '@app/shared/ui';
 import { useTheme } from '@app/shared/theme';
 import { speechModel } from '../model/speech-model';
-import { VoiceSelector } from './voice-selector';
+import { shareModel } from '@app/features/share-tour';
 
 type SpeechControlsProps = {
   text: string;
+  placeName: string;
 };
 
-export const SpeechControls = ({ text }: SpeechControlsProps): JSX.Element => {
+export const SpeechControls = ({ text, placeName }: SpeechControlsProps): JSX.Element => {
   const { colors } = useTheme();
   const { isSpeaking, speechRate, progress, onPlay, onStop, onRateChange } = useUnit({
     isSpeaking: speechModel.$isSpeaking,
@@ -36,14 +37,25 @@ export const SpeechControls = ({ text }: SpeechControlsProps): JSX.Element => {
             onPress={onStop}
             appearance="danger"
             icon={<Ionicons name="stop" size={18} color={colors.textInverse} />}
+            style={styles.speechButton}
           />
         ) : (
           <Button
             label="Прослушать"
             onPress={() => onPlay(text)}
             icon={<Ionicons name="play" size={18} color={colors.textInverse} />}
+            style={styles.speechButton}
           />
         )}
+
+        <Button
+          label="Поделиться"
+          variant="outline"
+          onPress={() => shareModel.sharePressed({ placeName, text })}
+          icon={<Ionicons name="share-outline" size={18} color={colors.primary} />}
+          style={styles.shareButton}
+          disabled={!placeName}
+        />
       </View>
 
       {isSpeaking && progress > 0 && (
@@ -66,8 +78,6 @@ export const SpeechControls = ({ text }: SpeechControlsProps): JSX.Element => {
       )}
 
       <SpeedSlider value={speechRate} onValueChange={onRateChange} />
-
-      <VoiceSelector />
     </View>
   );
 };
@@ -79,6 +89,12 @@ const styles = StyleSheet.create({
   buttons: {
     flexDirection: 'row',
     gap: 8,
+  },
+  speechButton: {
+    flex: 1,
+  },
+  shareButton: {
+    flex: 1,
   },
   progressContainer: {
     marginVertical: 4,

@@ -4,6 +4,7 @@ import { Ionicons } from '@expo/vector-icons';
 import { useTheme } from '@app/shared/theme';
 import { Button } from '@app/shared/ui';
 import { ProviderSelector } from '@app/features/ai-settings';
+import { VoiceSelector } from '@app/features/speech-player';
 
 export default function SettingsScreen(): JSX.Element {
   const { colors, isDark, toggleTheme } = useTheme();
@@ -14,6 +15,13 @@ export default function SettingsScreen(): JSX.Element {
       contentContainerStyle={styles.content}
     >
       <ProviderSelector />
+
+      <View style={styles.section}>
+        <Text style={[styles.sectionTitle, { color: colors.textPrimary }]}>
+          Настройки озвучки
+        </Text>
+        <VoiceSelector />
+      </View>
 
       <View style={styles.section}>
         <Text style={[styles.sectionTitle, { color: colors.textPrimary }]}>

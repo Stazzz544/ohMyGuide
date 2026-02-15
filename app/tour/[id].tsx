@@ -61,7 +61,7 @@ export default function TourDetailScreen(): JSX.Element {
       </ScrollView>
 
       <View style={[styles.controls, { backgroundColor: colors.bgPrimary, borderTopColor: colors.border }]}>
-        <SpeechControls text={tour.generatedText} />
+        <SpeechControls text={tour.generatedText} placeName={tour.placeName} />
         <View style={styles.buttonsRow}>
           <Button
             label="Поделиться"

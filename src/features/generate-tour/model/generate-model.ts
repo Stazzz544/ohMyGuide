@@ -28,6 +28,7 @@ const placeNameChanged = createEvent<string>();
 const generatePressed = createEvent();
 const prepareOfflinePressed = createEvent();
 const resetGeneration = createEvent();
+const tourLoaded = createEvent<{ placeName: string; generatedText: string }>();
 
 // Обновление имени места
 sample({
@@ -38,6 +39,25 @@ sample({
 // Сброс ошибки при изменении ввода
 sample({
   clock: placeNameChanged,
+  fn: () => null,
+  target: $error,
+});
+
+// Загрузка тура из сохранённых
+sample({
+  clock: tourLoaded,
+  fn: ({ placeName }) => placeName,
+  target: $placeName,
+});
+
+sample({
+  clock: tourLoaded,
+  fn: ({ generatedText }) => generatedText,
+  target: $generatedText,
+});
+
+sample({
+  clock: tourLoaded,
   fn: () => null,
   target: $error,
 });
@@ -150,4 +170,5 @@ export const generateModel = {
   generatePressed,
   prepareOfflinePressed,
   resetGeneration,
+  tourLoaded,
 };

@@ -1,5 +1,5 @@
 import { View, Text, StyleSheet, TouchableOpacity, ScrollView } from 'react-native';
-import { JSX, useState } from 'react';
+import { JSX, useState, useEffect } from 'react';
 import { useUnit } from 'effector-react';
 import { Ionicons } from '@expo/vector-icons';
 import { useTheme } from '@app/shared/theme';
@@ -14,6 +14,10 @@ export const VoiceSelector = (): JSX.Element | null => {
     selectedVoice: speechModel.$selectedVoice,
     onSelect: speechModel.voiceSelected,
   });
+
+  useEffect(() => {
+    speechModel.loadVoicesFx();
+  }, []);
 
   if (voices.length === 0) {
     return null;

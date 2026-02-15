@@ -10,6 +10,7 @@ import type { Tour, TourId } from '@app/entities/tour';
 import type { FolderTreeNode, Folder } from '@app/entities/folder';
 import { FolderHeader } from './folder-header';
 import { FolderContextMenu, FolderRenameModal, FolderDeleteConfirmation } from '@app/features/folder-actions';
+import { generateModel } from '@app/features/generate-tour';
 
 // Включаем LayoutAnimation для Android
 if (Platform.OS === 'android' && UIManager.setLayoutAnimationEnabledExperimental) {
@@ -24,7 +25,7 @@ export const SavedToursList = (): JSX.Element => {
   const [renameFolder, setRenameFolder] = useState<Folder | null>(null);
   const [deleteFolder, setDeleteFolder] = useState<Folder | null>(null);
 
-  const { folderTree, rootTours, folders, tours, isLoading, onDelete, onRefresh } = useUnit({
+  const { folderTree, rootTours, folders, tours, isLoading, onDelete, onRefresh, onTourLoad } = useUnit({
     folderTree: $folderTree,
     rootTours: $rootTours,
     folders: folderStore.$folders,
@@ -32,13 +33,21 @@ export const SavedToursList = (): JSX.Element => {
     isLoading: tourStore.$isLoading,
     onDelete: tourStore.tourDeleted,
     onRefresh: tourStore.toursRefreshed,
+    onTourLoad: generateModel.tourLoaded,
   });
 
   const handlePress = useCallback(
     (id: string): void => {
-      router.push(`/tour/${id}` as const);
+      const tour = tours.find((t) => t.id === id);
+      if (tour) {
+        onTourLoad({
+          placeName: tour.placeName,
+          generatedText: tour.generatedText,
+        });
+        router.push('/(tabs)/' as const);
+      }
     },
-    [router]
+    [tours, onTourLoad, router]
   );
 
   const handleDelete = useCallback(
