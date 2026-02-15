@@ -1,9 +1,7 @@
 import { createStore, createEvent, createEffect, sample, combine } from 'effector';
-import { debounce } from 'patronum';
 import { generateTourApi } from '@app/shared/api';
 import { tourStore } from '@app/entities/tour';
 import { settingsModel } from '@app/features/ai-settings';
-import { DEBOUNCE_INPUT_MS } from '@app/shared/config';
 
 import type { CachedTour } from '@app/entities/tour';
 import type { AiProviderId } from '@app/shared/api';
@@ -31,15 +29,9 @@ const generatePressed = createEvent();
 const prepareOfflinePressed = createEvent();
 const resetGeneration = createEvent();
 
-// Debounce ввода
-const debouncedPlaceNameChanged = debounce({
-  source: placeNameChanged,
-  timeout: DEBOUNCE_INPUT_MS,
-});
-
 // Обновление имени места
 sample({
-  clock: debouncedPlaceNameChanged,
+  clock: placeNameChanged,
   target: $placeName,
 });
 
