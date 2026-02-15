@@ -1,6 +1,6 @@
 // Конфигурации AI-провайдеров
 
-export type AiProviderId = 'deepseek' | 'openai' | 'anthropic';
+export type AiProviderId = 'deepseek' | 'openai' | 'anthropic' | 'groq';
 
 export type AiProviderConfig = {
   id: AiProviderId;
@@ -87,6 +87,14 @@ export const AI_PROVIDERS: Record<AiProviderId, AiProviderConfig> = {
     }),
     parseResponse: parseAnthropicResponse,
   },
+  groq: {
+    id: 'groq',
+    name: 'Groq',
+    baseUrl: 'https://api.groq.com/openai',
+    defaultModel: 'llama-3.3-70b-versatile',
+    formatRequest: formatOpenAiRequest,
+    parseResponse: parseOpenAiResponse,
+  },
 };
 
 export const DEFAULT_PROVIDER: AiProviderId = 'deepseek';
@@ -96,4 +104,5 @@ export const PROVIDER_LIST: Array<{ id: AiProviderId; name: string }> = [
   { id: 'deepseek', name: 'DeepSeek' },
   { id: 'openai', name: 'OpenAI (GPT)' },
   { id: 'anthropic', name: 'Anthropic (Claude)' },
+  { id: 'groq', name: 'Groq' },
 ];
