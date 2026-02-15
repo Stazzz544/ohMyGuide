@@ -10,7 +10,7 @@
  * - Числа с точками (1.5, 10.20)
  * - Инициалы (А.С. Пушкин)
  */
-const splitIntoSentences = (text: string): string[] => {
+export const splitIntoSentences = (text: string): string[] => {
   // Удаляем лишние пробелы и переносы строк
   const cleanText = text.replace(/\s+/g, ' ').trim();
 
