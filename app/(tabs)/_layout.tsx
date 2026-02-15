@@ -1,41 +1,58 @@
-import { Tabs } from "expo-router";
-import { Ionicons } from "@expo/vector-icons";
-import { JSX } from "react";
+import { Tabs } from 'expo-router';
+import { Pressable } from 'react-native';
+import { Ionicons } from '@expo/vector-icons';
+import { JSX } from 'react';
+import { useTheme } from '@app/shared/theme';
 
 export default function TabsLayout(): JSX.Element {
+  const { colors, isDark, toggleTheme } = useTheme();
+
   return (
     <Tabs
       screenOptions={{
-        tabBarActiveTintColor: "#3748c6",
-        tabBarInactiveTintColor: "#545465",
-        headerStyle: { backgroundColor: "#ffffff" },
-        headerTitleStyle: { fontWeight: "600", color: "#040134" },
+        tabBarActiveTintColor: colors.primary,
+        tabBarInactiveTintColor: colors.textSecondary,
+        tabBarStyle: {
+          backgroundColor: colors.tabBarBg,
+          borderTopColor: colors.border,
+        },
+        headerStyle: { backgroundColor: colors.headerBg },
+        headerTitleStyle: { fontWeight: '600', color: colors.textPrimary },
+        headerRight: () => (
+          <Pressable onPress={toggleTheme} style={{ marginRight: 16 }} hitSlop={8}>
+            <Ionicons
+              name={isDark ? 'sunny-outline' : 'moon-outline'}
+              size={22}
+              color={colors.textPrimary}
+            />
+          </Pressable>
+        ),
       }}
     >
       <Tabs.Screen
         name="index"
         options={{
-          title: "Главная",
+          title: 'Генерация',
           tabBarIcon: ({ color, size }) => (
-            <Ionicons name="home-outline" size={size} color={color} />
+            <Ionicons name="sparkles-outline" size={size} color={color} />
           ),
         }}
       />
       <Tabs.Screen
-        name="explore"
+        name="saved"
         options={{
-          title: "Обзор",
+          title: 'Сохранённые',
           tabBarIcon: ({ color, size }) => (
-            <Ionicons name="compass-outline" size={size} color={color} />
+            <Ionicons name="bookmark-outline" size={size} color={color} />
           ),
         }}
       />
       <Tabs.Screen
-        name="profile"
+        name="settings"
         options={{
-          title: "Профиль",
+          title: 'Настройки',
           tabBarIcon: ({ color, size }) => (
-            <Ionicons name="person-outline" size={size} color={color} />
+            <Ionicons name="settings-outline" size={size} color={color} />
           ),
         }}
       />

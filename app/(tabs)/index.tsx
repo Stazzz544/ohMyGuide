@@ -1,54 +1,36 @@
-import { StyleSheet, Text, View, Pressable } from 'react-native';
-import { Link } from 'expo-router';
-import { StatusBar } from 'expo-status-bar';
+import { ScrollView, StyleSheet, KeyboardAvoidingView, Platform } from 'react-native';
 import { JSX } from 'react';
+import { useTheme } from '@app/shared/theme';
+import { GenerateForm } from '@app/features/generate-tour';
+import { TourViewer } from '@app/widgets/tour-viewer';
 
-export default function HomeScreen(): JSX.Element {
+export default function GenerateScreen(): JSX.Element {
+  const { colors } = useTheme();
+
   return (
-    <View style={styles.container}>
-      <Text style={styles.title}>Привет, мир!</Text>
-      <Text style={styles.subtitle}>Это твоё первое приложение с навигацией</Text>
-
-      <Link href="/details" asChild>
-        <Pressable style={styles.button}>
-          <Text style={styles.buttonText}>Открыть подробности</Text>
-        </Pressable>
-      </Link>
-
-      <StatusBar style="auto" />
-    </View>
+    <KeyboardAvoidingView
+      style={[styles.container, { backgroundColor: colors.bgPrimary }]}
+      behavior={Platform.OS === 'ios' ? 'padding' : 'height'}
+    >
+      <ScrollView
+        contentContainerStyle={styles.content}
+        keyboardShouldPersistTaps="handled"
+        showsVerticalScrollIndicator={false}
+      >
+        <GenerateForm />
+        <TourViewer />
+      </ScrollView>
+    </KeyboardAvoidingView>
   );
 }
 
 const styles = StyleSheet.create({
   container: {
     flex: 1,
-    backgroundColor: '#ffffff',
-    alignItems: 'center',
-    justifyContent: 'center',
-    padding: 24,
   },
-  title: {
-    fontSize: 28,
-    fontWeight: '700',
-    color: '#040134',
-    marginBottom: 8,
-  },
-  subtitle: {
-    fontSize: 16,
-    color: '#545465',
-    marginBottom: 32,
-    textAlign: 'center',
-  },
-  button: {
-    backgroundColor: '#3748c6',
-    paddingHorizontal: 24,
-    paddingVertical: 14,
-    borderRadius: 8,
-  },
-  buttonText: {
-    color: '#ffffff',
-    fontSize: 16,
-    fontWeight: '600',
+  content: {
+    paddingVertical: 16,
+    gap: 24,
+    paddingBottom: 32,
   },
 });
