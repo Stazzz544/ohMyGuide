@@ -14,7 +14,8 @@ type FolderContextMenuProps = {
 };
 
 export const FolderContextMenu = ({ visible, folder, onClose, onAction }: FolderContextMenuProps): JSX.Element => {
-  const { colors } = useTheme();
+  const { colors, isDark } = useTheme();
+  const modalBg = isDark ? '#1C1C1E' : '#FFFFFF';
 
   const handleRename = () => {
     if (!folder) {
@@ -40,7 +41,7 @@ export const FolderContextMenu = ({ visible, folder, onClose, onAction }: Folder
     <Modal visible={visible} transparent animationType="fade" onRequestClose={onClose}>
       <TouchableOpacity style={styles['backdrop']} activeOpacity={1} onPress={onClose} />
       <View style={styles['overlay']} pointerEvents="box-none">
-        <View style={[styles['menu'], { backgroundColor: '#FFFFFF' }]}>
+        <View style={[styles['menu'], { backgroundColor: modalBg }]}>
           <View style={styles['header']}>
             <Ionicons name="folder" size={20} color={colors.primary} />
             <Text style={[styles['title'], { color: colors.textPrimary }]} numberOfLines={1}>

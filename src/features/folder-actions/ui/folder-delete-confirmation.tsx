@@ -23,7 +23,8 @@ export const FolderDeleteConfirmation = ({
   onClose,
   onDelete,
 }: FolderDeleteConfirmationProps): JSX.Element => {
-  const { colors } = useTheme();
+  const { colors, isDark } = useTheme();
+  const modalBg = isDark ? '#1C1C1E' : '#FFFFFF';
 
   const handleMoveToRoot = () => {
     if (!folder) {
@@ -52,7 +53,7 @@ export const FolderDeleteConfirmation = ({
     <Modal visible={visible} transparent animationType="fade" onRequestClose={onClose}>
       <TouchableOpacity style={styles['backdrop']} activeOpacity={1} onPress={onClose} />
       <View style={styles['overlay']} pointerEvents="box-none">
-        <View style={[styles['modal'], { backgroundColor: '#FFFFFF' }]}>
+        <View style={[styles['modal'], { backgroundColor: modalBg }]}>
           <View style={styles['header']}>
             <View style={[styles['icon-container'], { backgroundColor: colors.backgroundSecondary }]}>
               <Ionicons name="trash-outline" size={24} color={colors.danger} />

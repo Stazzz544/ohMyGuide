@@ -17,8 +17,9 @@ type FolderPickerModalProps = {
 };
 
 export const FolderPickerModal = ({ visible, model, onClose, onSelect }: FolderPickerModalProps): JSX.Element => {
-  const { colors } = useTheme();
+  const { colors, isDark } = useTheme();
   const [selectedFolderId, setSelectedFolderId] = useState<FolderId | null>(null);
+  const modalBg = isDark ? '#1C1C1E' : '#FFFFFF';
 
   const { folderTree, expandedFolders, isCreateModalOpen, createModalParentId, folders } = useUnit({
     folderTree: $folderTree,
@@ -63,15 +64,15 @@ export const FolderPickerModal = ({ visible, model, onClose, onSelect }: FolderP
       <Modal visible={visible} transparent animationType="slide" onRequestClose={handleClose}>
         <TouchableOpacity style={styles['backdrop']} activeOpacity={1} onPress={handleClose} />
         <View style={styles['overlay']} pointerEvents="box-none">
-          <View style={[styles['modal'], { backgroundColor: '#FFFFFF' }]}>
-            <View style={[styles['header'], { backgroundColor: '#FFFFFF' }]}>
+          <View style={[styles['modal'], { backgroundColor: modalBg }]}>
+            <View style={[styles['header'], { backgroundColor: modalBg }]}>
               <Text style={[styles['title'], { color: colors.textPrimary }]}>Выберите папку</Text>
               <TouchableOpacity onPress={handleClose} hitSlop={{ top: 10, bottom: 10, left: 10, right: 10 }}>
                 <Ionicons name="close" size={24} color={colors.textSecondary} />
               </TouchableOpacity>
             </View>
 
-            <ScrollView style={[styles['list'], { backgroundColor: '#FFFFFF' }]} showsVerticalScrollIndicator={false}>
+            <ScrollView style={[styles['list'], { backgroundColor: modalBg }]} showsVerticalScrollIndicator={false}>
               {/* Опция "Без папки" */}
               <TouchableOpacity
                 style={[
@@ -128,7 +129,7 @@ export const FolderPickerModal = ({ visible, model, onClose, onSelect }: FolderP
               )}
             </ScrollView>
 
-            <View style={[styles['footer'], { backgroundColor: '#FFFFFF' }]}>
+            <View style={[styles['footer'], { backgroundColor: modalBg }]}>
               <TouchableOpacity
                 style={[styles['button'], styles['button-secondary'], { borderColor: colors.borderColor }]}
                 onPress={handleClose}
