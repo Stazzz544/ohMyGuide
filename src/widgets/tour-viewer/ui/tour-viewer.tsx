@@ -1,12 +1,103 @@
-import { View, ScrollView, Text, StyleSheet } from "react-native";
-import { JSX } from "react";
-import { useUnit } from "effector-react";
-import { Ionicons } from "@expo/vector-icons";
-import { TourSkeleton } from "@app/shared/ui";
-import { useTheme } from "@app/shared/theme";
-import { CARD_BORDER_RADIUS } from "@app/shared/config";
-import { SpeechControls } from "@app/features/speech-player";
-import { generateModel } from "@app/features/generate-tour";
+import { View, ScrollView, Text, StyleSheet } from 'react-native';
+import type { LayoutChangeEvent } from 'react-native';
+import { JSX, useCallback, useEffect, useRef } from 'react';
+import { useUnit } from 'effector-react';
+import { Ionicons } from '@expo/vector-icons';
+import { TourSkeleton } from '@app/shared/ui';
+import { useTheme } from '@app/shared/theme';
+import type { ThemeColors } from '@app/shared/theme/colors';
+import { CARD_BORDER_RADIUS } from '@app/shared/config';
+import { SpeechControls, speechModel } from '@app/features/speech-player';
+import { generateModel } from '@app/features/generate-tour';
+import type { TextStructure } from '@app/shared/lib';
+
+type HighlightedTextProps = {
+  structure: TextStructure;
+  currentIndex: number;
+  colors: ThemeColors;
+};
+
+const HighlightedText = ({ structure, currentIndex, colors }: HighlightedTextProps): JSX.Element => {
+  const scrollViewRef = useRef<ScrollView>(null);
+  const paragraphPositions = useRef<Record<number, number>>({});
+  const isUserScrolling = useRef<boolean>(false);
+  const scrollTimeout = useRef<ReturnType<typeof setTimeout> | null>(null);
+
+  const handleParagraphLayout = useCallback((pIndex: number, event: LayoutChangeEvent) => {
+    paragraphPositions.current[pIndex] = event.nativeEvent.layout.y;
+  }, []);
+
+  const handleScrollBeginDrag = useCallback(() => {
+    isUserScrolling.current = true;
+    if (scrollTimeout.current) {
+      clearTimeout(scrollTimeout.current);
+    }
+  }, []);
+
+  const handleScrollEndDrag = useCallback(() => {
+    scrollTimeout.current = setTimeout(() => {
+      isUserScrolling.current = false;
+    }, 2000);
+  }, []);
+
+  useEffect(() => {
+    if (isUserScrolling.current) {
+      return;
+    }
+
+    const currentParagraph = structure.paragraphs.findIndex(
+      (p) => currentIndex >= p.startIndex && currentIndex <= p.endIndex,
+    );
+
+    if (currentParagraph >= 0 && scrollViewRef.current) {
+      const y = paragraphPositions.current[currentParagraph] ?? 0;
+      scrollViewRef.current.scrollTo({ y: Math.max(0, y - 20), animated: true });
+    }
+  }, [currentIndex, structure]);
+
+  return (
+    <ScrollView
+      ref={scrollViewRef}
+      contentContainerStyle={styles.textContent}
+      showsVerticalScrollIndicator={true}
+      nestedScrollEnabled={true}
+      onScrollBeginDrag={handleScrollBeginDrag}
+      onScrollEndDrag={handleScrollEndDrag}
+    >
+      {structure.paragraphs.map((paragraph, pIndex) => (
+        <View
+          key={pIndex}
+          style={styles.paragraph}
+          onLayout={(event) => handleParagraphLayout(pIndex, event)}
+        >
+          <Text style={styles.tourText}>
+            {paragraph.sentences.map((sentence, sIndex) => {
+              const globalIndex = paragraph.startIndex + sIndex;
+              const isRead = globalIndex < currentIndex;
+              const isCurrent = globalIndex === currentIndex;
+
+              return (
+                <Text
+                  key={globalIndex}
+                  style={[
+                    isRead && { color: colors.textSecondary, opacity: 0.6 },
+                    isCurrent && {
+                      color: colors.primary,
+                      backgroundColor: colors.primary + '20',
+                    },
+                    !isRead && !isCurrent && { color: colors.textPrimary },
+                  ]}
+                >
+                  {sentence}{sIndex < paragraph.sentences.length - 1 ? ' ' : ''}
+                </Text>
+              );
+            })}
+          </Text>
+        </View>
+      ))}
+    </ScrollView>
+  );
+};
 
 export const TourViewer = (): JSX.Element => {
   const { colors } = useTheme();
@@ -16,6 +107,12 @@ export const TourViewer = (): JSX.Element => {
     placeName: generateModel.$placeName,
     isGenerating: generateModel.$isGenerating,
     isPrepareMode: generateModel.$isPrepareMode,
+  });
+
+  const { isSpeaking, textStructure, currentSentenceIndex } = useUnit({
+    isSpeaking: speechModel.$isSpeaking,
+    textStructure: speechModel.$textStructure,
+    currentSentenceIndex: speechModel.$currentSentenceIndex,
   });
 
   // Skeleton при загрузке
@@ -72,15 +169,23 @@ export const TourViewer = (): JSX.Element => {
           { backgroundColor: colors.bgCard, borderColor: colors.border },
         ]}
       >
-        <ScrollView
-          contentContainerStyle={styles.textContent}
-          showsVerticalScrollIndicator={true}
-          nestedScrollEnabled={true}
-        >
-          <Text style={[styles.tourText, { color: colors.textPrimary }]}>
-            {generatedText}
-          </Text>
-        </ScrollView>
+        {isSpeaking && textStructure ? (
+          <HighlightedText
+            structure={textStructure}
+            currentIndex={currentSentenceIndex}
+            colors={colors}
+          />
+        ) : (
+          <ScrollView
+            contentContainerStyle={styles.textContent}
+            showsVerticalScrollIndicator={true}
+            nestedScrollEnabled={true}
+          >
+            <Text style={[styles.tourText, { color: colors.textPrimary }]}>
+              {generatedText}
+            </Text>
+          </ScrollView>
+        )}
       </View>
     </View>
   );
@@ -96,40 +201,40 @@ const styles = StyleSheet.create({
     marginHorizontal: 16,
     borderRadius: CARD_BORDER_RADIUS,
     borderWidth: 1,
-    overflow: "hidden",
+    overflow: 'hidden',
   },
   prepareHint: {
-    flexDirection: "row",
-    alignItems: "center",
+    flexDirection: 'row',
+    alignItems: 'center',
     gap: 6,
     paddingHorizontal: 16,
     paddingTop: 12,
   },
   prepareHintText: {
     fontSize: 13,
-    fontWeight: "500",
+    fontWeight: '500',
   },
   empty: {
-    alignItems: "center",
-    justifyContent: "center",
+    alignItems: 'center',
+    justifyContent: 'center',
     paddingVertical: 48,
     paddingHorizontal: 32,
     gap: 12,
   },
   emptyTitle: {
     fontSize: 18,
-    fontWeight: "700",
+    fontWeight: '700',
   },
   emptyText: {
     fontSize: 14,
-    textAlign: "center",
+    textAlign: 'center',
     lineHeight: 20,
   },
   textCard: {
     flex: 1,
     borderRadius: CARD_BORDER_RADIUS,
     borderWidth: 1,
-    overflow: "hidden",
+    overflow: 'hidden',
   },
   textContent: {
     padding: 16,
@@ -137,6 +242,9 @@ const styles = StyleSheet.create({
   tourText: {
     fontSize: 15,
     lineHeight: 24,
+  },
+  paragraph: {
+    marginBottom: 16,
   },
   controlsSection: {
     gap: 12,

@@ -41,6 +41,44 @@ export const splitIntoSentences = (text: string): string[] => {
 };
 
 /**
+ * Структура текста с сохранением абзацев
+ */
+export type ParagraphStructure = {
+  sentences: string[];
+  startIndex: number;
+  endIndex: number;
+};
+
+export type TextStructure = {
+  paragraphs: ParagraphStructure[];
+  allSentences: string[];
+};
+
+/**
+ * Разбивает текст на структуру: абзацы → предложения
+ * Сохраняет оригинальную структуру с переносами строк
+ */
+export const splitTextWithStructure = (text: string): TextStructure => {
+  if (!text || text.trim().length === 0) {
+    return { paragraphs: [], allSentences: [] };
+  }
+
+  const paragraphTexts = text.split(/\n\n+/).filter((p) => p.trim().length > 0);
+
+  const allSentences: string[] = [];
+  const paragraphs: ParagraphStructure[] = paragraphTexts.map((paragraphText) => {
+    const sentences = splitIntoSentences(paragraphText);
+    const startIndex = allSentences.length;
+    allSentences.push(...sentences);
+    const endIndex = allSentences.length - 1;
+
+    return { sentences, startIndex, endIndex };
+  });
+
+  return { paragraphs, allSentences };
+};
+
+/**
  * Группирует предложения в чанки до достижения maxChunkSize
  */
 const groupSentencesIntoChunks = (sentences: string[], maxChunkSize: number): string[] => {

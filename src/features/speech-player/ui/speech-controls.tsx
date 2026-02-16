@@ -1,5 +1,6 @@
-import { View, Text, StyleSheet } from 'react-native';
-import { JSX, useEffect } from 'react';
+import { View, Text, Pressable, StyleSheet } from 'react-native';
+import type { GestureResponderEvent, LayoutChangeEvent } from 'react-native';
+import { JSX, useCallback, useEffect, useState } from 'react';
 import { useUnit } from 'effector-react';
 import { Ionicons } from '@expo/vector-icons';
 import { Button, SpeedSlider } from '@app/shared/ui';
@@ -14,14 +15,40 @@ type SpeechControlsProps = {
 
 export const SpeechControls = ({ text, placeName }: SpeechControlsProps): JSX.Element => {
   const { colors } = useTheme();
-  const { isSpeaking, speechRate, progress, onPlay, onStop, onRateChange } = useUnit({
+  const { isSpeaking, speechRate, progress, sentences, onPlay, onStop, onRateChange, onSeek } = useUnit({
     isSpeaking: speechModel.$isSpeaking,
     speechRate: speechModel.$speechRate,
     progress: speechModel.$progress,
+    sentences: speechModel.$sentences,
     onPlay: speechModel.playPressed,
     onStop: speechModel.stopPressed,
     onRateChange: speechModel.rateChanged,
+    onSeek: speechModel.seekToSentence,
   });
+
+  const [progressBarWidth, setProgressBarWidth] = useState<number>(0);
+
+  const handleProgressBarLayout = useCallback((event: LayoutChangeEvent) => {
+    setProgressBarWidth(event.nativeEvent.layout.width);
+  }, []);
+
+  const handleProgressBarPress = useCallback(
+    (event: GestureResponderEvent) => {
+      if (sentences.length === 0 || progressBarWidth === 0) {
+        return;
+      }
+
+      const { locationX } = event.nativeEvent;
+      const percentage = Math.max(0, Math.min(1, locationX / progressBarWidth));
+      const targetIndex = Math.min(
+        Math.floor(percentage * sentences.length),
+        sentences.length - 1,
+      );
+
+      onSeek(targetIndex);
+    },
+    [sentences, progressBarWidth, onSeek],
+  );
 
   // Загрузить доступные голоса при монтировании компонента
   useEffect(() => {
@@ -62,7 +89,11 @@ export const SpeechControls = ({ text, placeName }: SpeechControlsProps): JSX.El
         <Text style={[styles.progressText, { color: colors.textSecondary }]}>
           Прогресс: {progress}%
         </Text>
-        <View style={[styles.progressBar, { backgroundColor: colors.border }]}>
+        <Pressable
+          onPress={handleProgressBarPress}
+          onLayout={handleProgressBarLayout}
+          style={[styles.progressBar, { backgroundColor: colors.border }]}
+        >
           <View
             style={[
               styles.progressFill,
@@ -72,7 +103,7 @@ export const SpeechControls = ({ text, placeName }: SpeechControlsProps): JSX.El
               },
             ]}
           />
-        </View>
+        </Pressable>
       </View>
 
       <SpeedSlider value={speechRate} onValueChange={onRateChange} />
@@ -102,12 +133,12 @@ const styles = StyleSheet.create({
     marginBottom: 6,
   },
   progressBar: {
-    height: 6,
-    borderRadius: 3,
+    height: 8,
+    borderRadius: 4,
     overflow: 'hidden',
   },
   progressFill: {
     height: '100%',
-    borderRadius: 3,
+    borderRadius: 4,
   },
 });
