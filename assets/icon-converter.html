@@ -1,0 +1,94 @@
+<!DOCTYPE html>
+<html lang="ru">
+<head>
+  <meta charset="UTF-8">
+  <title>OhMyGuide — Icon Converter</title>
+  <style>
+    body { font-family: system-ui; background: #1a1a2e; color: #f0f0f7; display: flex; flex-direction: column; align-items: center; padding: 40px; gap: 24px; }
+    h1 { margin: 0; font-size: 24px; }
+    .preview { background: #0d0d1a; border-radius: 16px; padding: 24px; display: flex; flex-direction: column; align-items: center; gap: 16px; }
+    .preview img { border-radius: 40px; }
+    .sizes { display: flex; gap: 16px; align-items: flex-end; }
+    .size-item { text-align: center; font-size: 12px; color: #888; }
+    .buttons { display: flex; gap: 12px; flex-wrap: wrap; justify-content: center; }
+    button { background: #3748c6; color: white; border: none; padding: 12px 24px; border-radius: 8px; font-size: 14px; cursor: pointer; transition: background 0.2s; }
+    button:hover { background: #2a3899; }
+    canvas { display: none; }
+  </style>
+</head>
+<body>
+  <h1>OhMyGuide Icon Preview & Export</h1>
+
+  <div class="preview">
+    <div class="sizes" id="sizes"></div>
+  </div>
+
+  <div class="buttons">
+    <button onclick="download(1024, 'icon.png')">Скачать icon.png (1024×1024)</button>
+    <button onclick="download(1024, 'adaptive-icon.png')">Скачать adaptive-icon.png</button>
+    <button onclick="download(512, 'splash-icon.png')">Скачать splash-icon.png (512×512)</button>
+  </div>
+
+  <canvas id="canvas"></canvas>
+
+  <script>
+    const svgPath = './icon.svg';
+    const previewSizes = [192, 96, 72, 48];
+
+    async function loadSVG() {
+      const res = await fetch(svgPath);
+      const text = await res.text();
+      return text;
+    }
+
+    function svgToDataURL(svgText) {
+      return 'data:image/svg+xml;charset=utf-8,' + encodeURIComponent(svgText);
+    }
+
+    async function renderPreviews() {
+      const svgText = await loadSVG();
+      const container = document.getElementById('sizes');
+
+      for (const size of previewSizes) {
+        const div = document.createElement('div');
+        div.className = 'size-item';
+
+        const img = document.createElement('img');
+        img.src = svgToDataURL(svgText);
+        img.width = size;
+        img.height = size;
+        img.style.borderRadius = (size * 0.2) + 'px';
+
+        const label = document.createElement('div');
+        label.textContent = size + '×' + size;
+
+        div.appendChild(img);
+        div.appendChild(label);
+        container.appendChild(div);
+      }
+    }
+
+    async function download(size, filename) {
+      const svgText = await loadSVG();
+      const canvas = document.getElementById('canvas');
+      canvas.width = size;
+      canvas.height = size;
+      const ctx = canvas.getContext('2d');
+
+      const img = new Image();
+      img.onload = () => {
+        ctx.clearRect(0, 0, size, size);
+        ctx.drawImage(img, 0, 0, size, size);
+
+        const link = document.createElement('a');
+        link.download = filename;
+        link.href = canvas.toDataURL('image/png');
+        link.click();
+      };
+      img.src = svgToDataURL(svgText);
+    }
+
+    renderPreviews();
+  </script>
+</body>
+</html>

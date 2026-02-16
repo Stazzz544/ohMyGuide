@@ -1,0 +1,120 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 1024 1024" width="1024" height="1024">
+  <defs>
+    <linearGradient id="bg" x1="0" y1="0" x2="1024" y2="1024" gradientUnits="userSpaceOnUse">
+      <stop offset="0%" stop-color="#3a8f5c"/>
+      <stop offset="100%" stop-color="#1a5c35"/>
+    </linearGradient>
+    <linearGradient id="cover" x1="0" y1="0" x2="0" y2="1">
+      <stop offset="0%" stop-color="#C4915A"/>
+      <stop offset="100%" stop-color="#A87340"/>
+    </linearGradient>
+    <linearGradient id="spine" x1="0" y1="0" x2="1" y2="0">
+      <stop offset="0%" stop-color="#7A5230"/>
+      <stop offset="100%" stop-color="#8B6038"/>
+    </linearGradient>
+    <radialGradient id="compass-face" cx="50%" cy="50%" r="50%">
+      <stop offset="0%" stop-color="#FFFDF5"/>
+      <stop offset="85%" stop-color="#F5ECDA"/>
+      <stop offset="100%" stop-color="#E8DABB"/>
+    </radialGradient>
+    <filter id="shadow" x="-10%" y="-10%" width="130%" height="130%">
+      <feDropShadow dx="0" dy="8" stdDeviation="12" flood-color="#0a2e16" flood-opacity="0.35"/>
+    </filter>
+    <filter id="compass-shadow" x="-5%" y="-5%" width="110%" height="110%">
+      <feDropShadow dx="0" dy="3" stdDeviation="5" flood-color="#3D2210" flood-opacity="0.25"/>
+    </filter>
+  </defs>
+
+  <!-- Background -->
+  <rect width="1024" height="1024" rx="200" fill="url(#bg)"/>
+
+  <!-- ====== CLOSED BOOK (portrait, ~408×608) ====== -->
+  <g filter="url(#shadow)">
+
+    <!-- Pages (visible from the bottom edge) -->
+    <rect x="340" y="810" width="384" height="18" rx="2" fill="#F5ECD7"/>
+    <line x1="346" y1="814" x2="718" y2="814" stroke="#E0D5B8" stroke-width="1"/>
+    <line x1="346" y1="818" x2="718" y2="818" stroke="#E0D5B8" stroke-width="1"/>
+    <line x1="346" y1="822" x2="718" y2="822" stroke="#E0D5B8" stroke-width="1"/>
+
+    <!-- Back cover (offset for depth) -->
+    <rect x="310" y="218" width="420" height="608" rx="12" fill="#8B6038"/>
+
+    <!-- Spine -->
+    <rect x="292" y="210" width="38" height="620" rx="6" fill="url(#spine)"/>
+    <!-- Spine ridges -->
+    <line x1="297" y1="268" x2="325" y2="268" stroke="#5C3A1E" stroke-width="2" stroke-opacity="0.3"/>
+    <line x1="297" y1="316" x2="325" y2="316" stroke="#5C3A1E" stroke-width="2" stroke-opacity="0.3"/>
+    <line x1="297" y1="772" x2="325" y2="772" stroke="#5C3A1E" stroke-width="2" stroke-opacity="0.3"/>
+    <line x1="297" y1="822" x2="325" y2="822" stroke="#5C3A1E" stroke-width="2" stroke-opacity="0.3"/>
+
+    <!-- Front cover -->
+    <rect x="322" y="210" width="408" height="608" rx="10" fill="url(#cover)"/>
+
+    <!-- Cover border / gold trim -->
+    <rect x="348" y="238" width="356" height="552" rx="6" fill="none" stroke="#D4A054" stroke-width="3" stroke-opacity="0.5"/>
+
+    <!-- Inner decorative border -->
+    <rect x="362" y="252" width="328" height="524" rx="4" fill="none" stroke="#D4A054" stroke-width="1.5" stroke-opacity="0.25"/>
+
+    <!-- Corner ornaments -->
+    <!-- Top-left -->
+    <path d="M 358 248 Q 358 268 368 268" fill="none" stroke="#D4A054" stroke-width="2" stroke-opacity="0.4"/>
+    <path d="M 358 248 Q 378 248 378 258" fill="none" stroke="#D4A054" stroke-width="2" stroke-opacity="0.4"/>
+    <!-- Top-right -->
+    <path d="M 694 248 Q 694 268 684 268" fill="none" stroke="#D4A054" stroke-width="2" stroke-opacity="0.4"/>
+    <path d="M 694 248 Q 674 248 674 258" fill="none" stroke="#D4A054" stroke-width="2" stroke-opacity="0.4"/>
+    <!-- Bottom-left -->
+    <path d="M 358 780 Q 358 760 368 760" fill="none" stroke="#D4A054" stroke-width="2" stroke-opacity="0.4"/>
+    <path d="M 358 780 Q 378 780 378 770" fill="none" stroke="#D4A054" stroke-width="2" stroke-opacity="0.4"/>
+    <!-- Bottom-right -->
+    <path d="M 694 780 Q 694 760 684 760" fill="none" stroke="#D4A054" stroke-width="2" stroke-opacity="0.4"/>
+    <path d="M 694 780 Q 674 780 674 770" fill="none" stroke="#D4A054" stroke-width="2" stroke-opacity="0.4"/>
+  </g>
+
+  <!-- ====== COMPASS ON BOOK COVER ====== -->
+  <g filter="url(#compass-shadow)">
+    <!-- Compass light face (cream/parchment) -->
+    <circle cx="526" cy="500" r="138" fill="url(#compass-face)"/>
+
+    <!-- Outer bezel ring (gold) -->
+    <circle cx="526" cy="500" r="138" fill="none" stroke="#C8963E" stroke-width="6"/>
+    <circle cx="526" cy="500" r="130" fill="none" stroke="#D4A054" stroke-width="2" stroke-opacity="0.4"/>
+
+    <!-- Cardinal tick marks (dark brown) -->
+    <!-- N -->
+    <line x1="526" y1="367" x2="526" y2="385" stroke="#6B4526" stroke-width="4" stroke-linecap="round"/>
+    <!-- S -->
+    <line x1="526" y1="615" x2="526" y2="633" stroke="#6B4526" stroke-width="3" stroke-linecap="round" stroke-opacity="0.5"/>
+    <!-- E -->
+    <line x1="649" y1="500" x2="659" y2="500" stroke="#6B4526" stroke-width="3" stroke-linecap="round" stroke-opacity="0.5"/>
+    <!-- W -->
+    <line x1="393" y1="500" x2="403" y2="500" stroke="#6B4526" stroke-width="3" stroke-linecap="round" stroke-opacity="0.5"/>
+
+    <!-- Intermediate ticks -->
+    <line x1="620" y1="406" x2="628" y2="398" stroke="#6B4526" stroke-width="2" stroke-linecap="round" stroke-opacity="0.25"/>
+    <line x1="432" y1="406" x2="424" y2="398" stroke="#6B4526" stroke-width="2" stroke-linecap="round" stroke-opacity="0.25"/>
+    <line x1="620" y1="594" x2="628" y2="602" stroke="#6B4526" stroke-width="2" stroke-linecap="round" stroke-opacity="0.25"/>
+    <line x1="432" y1="594" x2="424" y2="602" stroke="#6B4526" stroke-width="2" stroke-linecap="round" stroke-opacity="0.25"/>
+
+    <!-- Cardinal letters -->
+    <text x="526" y="408" text-anchor="middle" font-family="Georgia, serif" font-weight="bold" font-size="26" fill="#6B4526" fill-opacity="0.7">N</text>
+    <text x="526" y="610" text-anchor="middle" font-family="Georgia, serif" font-size="22" fill="#6B4526" fill-opacity="0.4">S</text>
+    <text x="412" y="508" text-anchor="middle" font-family="Georgia, serif" font-size="22" fill="#6B4526" fill-opacity="0.4">W</text>
+    <text x="640" y="508" text-anchor="middle" font-family="Georgia, serif" font-size="22" fill="#6B4526" fill-opacity="0.4">E</text>
+
+    <!-- North needle (red) -->
+    <polygon points="526,372  544,490  508,490" fill="#C0392B" fill-opacity="0.85"/>
+    <!-- South needle (dark brown) -->
+    <polygon points="526,628  544,510  508,510" fill="#4A2E14" fill-opacity="0.45"/>
+    <!-- East needle (subtle gold) -->
+    <polygon points="652,500  536,484  536,516" fill="#C8963E" fill-opacity="0.25"/>
+    <!-- West needle (subtle gold) -->
+    <polygon points="400,500  516,484  516,516" fill="#C8963E" fill-opacity="0.25"/>
+
+    <!-- Center pin -->
+    <circle cx="526" cy="500" r="13" fill="#C8963E"/>
+    <circle cx="526" cy="500" r="7" fill="#FFFDF5"/>
+    <circle cx="526" cy="500" r="3.5" fill="#6B4526"/>
+  </g>
+</svg>
