@@ -41,6 +41,11 @@ const HighlightedText = ({ structure, currentWordIndex, colors, onWordPress }: H
     }, 2000);
   }, []);
 
+  // Определяем глобальный индекс текущего предложения
+  const currentSentenceGlobalIndex = structure.allSentences.findIndex(
+    (s) => currentWordIndex >= s.globalWordStart && currentWordIndex <= s.globalWordEnd,
+  );
+
   useEffect(() => {
     if (isUserScrolling.current) {
       return;
@@ -72,32 +77,26 @@ const HighlightedText = ({ structure, currentWordIndex, colors, onWordPress }: H
           onLayout={(event) => handleParagraphLayout(pIndex, event)}
         >
           <Text style={styles.tourText}>
-            {paragraph.sentences.map((sentence, sIndex) => (
-              <Text key={`s-${paragraph.startIndex + sIndex}`}>
-                {sentence.words.map((wordInfo, wIndex) => {
-                  const isRead = wordInfo.globalIndex < currentWordIndex;
-                  const isCurrent = wordInfo.globalIndex === currentWordIndex;
+            {paragraph.sentences.map((sentence, sIndex) => {
+              const absoluteSentenceIndex = paragraph.startIndex + sIndex;
+              const isSentenceRead = currentSentenceGlobalIndex === -1 || absoluteSentenceIndex < currentSentenceGlobalIndex;
+              const isSentenceCurrent = absoluteSentenceIndex === currentSentenceGlobalIndex;
 
-                  return (
-                    <Text
-                      key={wordInfo.globalIndex}
-                      onPress={() => onWordPress(wordInfo.globalIndex)}
-                      style={[
-                        isRead && { color: colors.textSecondary, opacity: 0.6 },
-                        isCurrent && {
-                          color: colors.primary,
-                          backgroundColor: colors.primary + '20',
-                        },
-                        !isRead && !isCurrent && { color: colors.textPrimary },
-                      ]}
-                    >
-                      {wordInfo.word}{wIndex < sentence.words.length - 1 ? ' ' : ''}
-                    </Text>
-                  );
-                })}
-                {sIndex < paragraph.sentences.length - 1 ? ' ' : ''}
-              </Text>
-            ))}
+              return (
+                <Text
+                  key={`s-${absoluteSentenceIndex}`}
+                  onPress={() => onWordPress(sentence.globalWordStart)}
+                  style={[
+                    isSentenceRead && { color: colors.textSecondary, opacity: 0.6 },
+                    isSentenceCurrent && { color: colors.primary },
+                    !isSentenceRead && !isSentenceCurrent && { color: colors.textPrimary },
+                  ]}
+                >
+                  {sentence.text}
+                  {sIndex < paragraph.sentences.length - 1 ? ' ' : ''}
+                </Text>
+              );
+            })}
           </Text>
         </View>
       ))}
@@ -115,12 +114,18 @@ export const TourViewer = (): JSX.Element => {
     isPrepareMode: generateModel.$isPrepareMode,
   });
 
-  const { isSpeaking, textStructure, currentWordIndex, onSeekWord } = useUnit({
-    isSpeaking: speechModel.$isSpeaking,
+  const { textStructure, currentWordIndex, onSeekWord } = useUnit({
     textStructure: speechModel.$textStructure,
     currentWordIndex: speechModel.$currentWordIndex,
     onSeekWord: speechModel.seekToWord,
   });
+
+  // Построить структуру текста при появлении/изменении текста
+  useEffect(() => {
+    if (generatedText) {
+      speechModel.textAvailable(generatedText);
+    }
+  }, [generatedText]);
 
   const handleWordPress = useCallback(
     (globalWordIndex: number) => {
@@ -183,7 +188,7 @@ export const TourViewer = (): JSX.Element => {
           { backgroundColor: colors.bgCard, borderColor: colors.border },
         ]}
       >
-        {isSpeaking && textStructure ? (
+        {textStructure ? (
           <HighlightedText
             structure={textStructure}
             currentWordIndex={currentWordIndex}

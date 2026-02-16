@@ -24,6 +24,15 @@ const voiceSelected = createEvent<string>();
 const seekToWord = createEvent<number>();
 const wordTimerTicked = createEvent();
 const sentenceStarted = createEvent();
+const textAvailable = createEvent<string>();
+
+const _playStarted = createEvent<{
+  sentenceIndex: number;
+  wordIndex: number;
+  text: string;
+  rate: number;
+  voice?: string;
+}>();
 
 // --- Effects ---
 
@@ -93,7 +102,45 @@ const $wordTimerId = createStore<ReturnType<typeof setInterval> | null>(null);
 
 // --- Логика ---
 
-// Остановить текущую озвучку перед новой
+// 0. textAvailable — строим структуру текста заранее (до нажатия Play)
+
+sample({
+  clock: textAvailable,
+  fn: (text) => (text.trim().length > 0 ? splitTextWithWordStructure(text) : null),
+  target: $textStructure,
+});
+
+// Извлечь плоский массив строк предложений для TTS
+sample({
+  clock: $textStructure,
+  fn: (structure) => structure?.allSentences.map((s) => s.text) ?? [],
+  target: $sentences,
+});
+
+// Сбросить позицию при новом тексте
+sample({
+  clock: textAvailable,
+  fn: () => 0,
+  target: [$currentSentenceIndex, $currentWordIndex, $progress],
+});
+
+// Остановить озвучку если шла при смене текста
+sample({
+  clock: textAvailable,
+  source: $isSpeaking,
+  filter: (isSpeaking) => isSpeaking,
+  target: stopFx,
+});
+
+// Остановить таймер при смене текста
+sample({
+  clock: textAvailable,
+  source: $wordTimerId,
+  filter: (timerId) => timerId !== null,
+  target: stopWordTimerFx,
+});
+
+// 1. Остановить текущую озвучку перед новой
 sample({
   clock: playPressed,
   source: $isSpeaking,
@@ -109,37 +156,59 @@ sample({
   target: stopWordTimerFx,
 });
 
-// 1. Разбить текст на структуру с пословной разбивкой
+// 1.1. Fallback: если $textStructure ещё не построен — построить из текста
 sample({
   clock: playPressed,
-  fn: (text) => splitTextWithWordStructure(text),
+  source: $textStructure,
+  filter: (structure) => structure === null,
+  fn: (_, text) => splitTextWithWordStructure(text),
   target: $textStructure,
 });
 
-// 1.1. Извлечь плоский массив строк предложений для TTS
-sample({
-  clock: $textStructure,
-  fn: (structure) => structure?.allSentences.map((s) => s.text) ?? [],
-  target: $sentences,
-});
-
-// 2. Сбросить индексы на 0
+// 2. Рассчитать позицию старта и запустить воспроизведение
 sample({
   clock: playPressed,
-  fn: () => 0,
-  target: [$currentSentenceIndex, $currentWordIndex],
+  source: {
+    structure: $textStructure,
+    currentWordIndex: $currentWordIndex,
+    rate: $speechRate,
+    voice: $selectedVoice,
+  },
+  filter: ({ structure }) => structure !== null && structure.allSentences.length > 0,
+  fn: ({ structure, currentWordIndex, rate, voice }) => {
+    const idx = structure!.allSentences.findIndex(
+      (s) => currentWordIndex >= s.globalWordStart && currentWordIndex <= s.globalWordEnd,
+    );
+    const sentenceIndex = idx >= 0 ? idx : 0;
+    const wordIndex = idx >= 0 ? currentWordIndex : 0;
+    return {
+      sentenceIndex,
+      wordIndex,
+      text: structure!.allSentences[sentenceIndex].text,
+      rate,
+      voice: voice ?? undefined,
+    };
+  },
+  target: _playStarted,
 });
 
-// 3. Запустить воспроизведение первого предложения
+// 2.1. Обновить индексы из рассчитанной позиции
 sample({
-  clock: $sentences,
-  source: { sentences: $sentences, rate: $speechRate, voice: $selectedVoice },
-  filter: ({ sentences }) => sentences.length > 0,
-  fn: ({ sentences, rate, voice }) => ({
-    text: sentences[0],
-    rate,
-    voice: voice ?? undefined,
-  }),
+  clock: _playStarted,
+  fn: ({ sentenceIndex }) => sentenceIndex,
+  target: $currentSentenceIndex,
+});
+
+sample({
+  clock: _playStarted,
+  fn: ({ wordIndex }) => wordIndex,
+  target: $currentWordIndex,
+});
+
+// 2.2. Запустить озвучку
+sample({
+  clock: _playStarted,
+  fn: ({ text, rate, voice }) => ({ text, rate, voice }),
   target: speakSentenceFx,
 });
 
@@ -263,11 +332,11 @@ sample({
   target: stopWordTimerFx,
 });
 
-// 8.2. Сбросить состояние при остановке
+// 8.2. Сбросить состояние при остановке (НЕ очищаем $textStructure)
 sample({
   clock: stopPressed,
   fn: () => null,
-  target: [$textStructure, $wordTimerId],
+  target: $wordTimerId,
 });
 
 sample({
@@ -341,6 +410,8 @@ sample({
 });
 
 // 14. Seek к слову
+
+// 14.0. Остановить таймер при seek
 sample({
   clock: seekToWord,
   source: $wordTimerId,
@@ -348,11 +419,7 @@ sample({
   target: stopWordTimerFx,
 });
 
-sample({
-  clock: seekToWord,
-  target: $currentWordIndex,
-});
-
+// 14.1. Обновить $currentWordIndex (общее для обоих путей)
 sample({
   clock: seekToWord,
   source: $textStructure,
@@ -362,27 +429,22 @@ sample({
     }
     return wordIndex >= 0 && wordIndex < structure.totalWordCount;
   },
-  fn: (structure, wordIndex) => {
-    const wordInfo = structure!.allWords[wordIndex];
-    return wordInfo.sentenceIndex;
-  },
-  target: $currentSentenceIndex,
+  fn: (_, wordIndex) => wordIndex,
+  target: $currentWordIndex,
 });
 
+// Путь A: seek во время воспроизведения — перезапустить озвучку с нового места
 sample({
   clock: seekToWord,
   source: {
     structure: $textStructure,
+    isSpeaking: $isSpeaking,
     sentences: $sentences,
     rate: $speechRate,
     voice: $selectedVoice,
   },
-  filter: ({ structure }, wordIndex) => {
-    if (!structure) {
-      return false;
-    }
-    return wordIndex >= 0 && wordIndex < structure.totalWordCount;
-  },
+  filter: ({ structure, isSpeaking }, wordIndex) =>
+    isSpeaking && structure !== null && wordIndex >= 0 && wordIndex < structure.totalWordCount,
   fn: ({ structure, sentences, rate, voice }, wordIndex) => {
     const wordInfo = structure!.allWords[wordIndex];
     return {
@@ -392,6 +454,26 @@ sample({
     };
   },
   target: seekAndSpeakFx,
+});
+
+// Путь A: обновить sentenceIndex при seek во время воспроизведения
+sample({
+  clock: seekToWord,
+  source: { structure: $textStructure, isSpeaking: $isSpeaking },
+  filter: ({ structure, isSpeaking }, wordIndex) =>
+    isSpeaking && structure !== null && wordIndex >= 0 && wordIndex < structure.totalWordCount,
+  fn: ({ structure }, wordIndex) => structure!.allWords[wordIndex].sentenceIndex,
+  target: $currentSentenceIndex,
+});
+
+// Путь B: seek когда НЕ играет — только обновить sentenceIndex (без озвучки)
+sample({
+  clock: seekToWord,
+  source: { structure: $textStructure, isSpeaking: $isSpeaking },
+  filter: ({ structure, isSpeaking }, wordIndex) =>
+    !isSpeaking && structure !== null && wordIndex >= 0 && wordIndex < structure.totalWordCount,
+  fn: ({ structure }, wordIndex) => structure!.allWords[wordIndex].sentenceIndex,
+  target: $currentSentenceIndex,
 });
 
 // 14.2. После seek — продолжить обычный поток
@@ -516,5 +598,6 @@ export const speechModel = {
   rateChanged,
   voiceSelected,
   seekToWord,
+  textAvailable,
   loadVoicesFx,
 };
