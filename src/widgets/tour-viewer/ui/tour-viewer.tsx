@@ -1,12 +1,12 @@
-import { View, ScrollView, Text, StyleSheet } from 'react-native';
-import { JSX } from 'react';
-import { useUnit } from 'effector-react';
-import { Ionicons } from '@expo/vector-icons';
-import { TourSkeleton } from '@app/shared/ui';
-import { useTheme } from '@app/shared/theme';
-import { CARD_BORDER_RADIUS } from '@app/shared/config';
-import { SpeechControls } from '@app/features/speech-player';
-import { generateModel } from '@app/features/generate-tour';
+import { View, ScrollView, Text, StyleSheet } from "react-native";
+import { JSX } from "react";
+import { useUnit } from "effector-react";
+import { Ionicons } from "@expo/vector-icons";
+import { TourSkeleton } from "@app/shared/ui";
+import { useTheme } from "@app/shared/theme";
+import { CARD_BORDER_RADIUS } from "@app/shared/config";
+import { SpeechControls } from "@app/features/speech-player";
+import { generateModel } from "@app/features/generate-tour";
 
 export const TourViewer = (): JSX.Element => {
   const { colors } = useTheme();
@@ -21,7 +21,12 @@ export const TourViewer = (): JSX.Element => {
   // Skeleton при загрузке
   if (isGenerating) {
     return (
-      <View style={[styles.skeletonContainer, { backgroundColor: colors.bgCard, borderColor: colors.border }]}>
+      <View
+        style={[
+          styles.skeletonContainer,
+          { backgroundColor: colors.bgCard, borderColor: colors.border },
+        ]}
+      >
         {isPrepareMode ? (
           <View style={styles.prepareHint}>
             <Ionicons name="download-outline" size={16} color={colors.info} />
@@ -39,12 +44,16 @@ export const TourViewer = (): JSX.Element => {
   if (!generatedText) {
     return (
       <View style={styles.empty}>
-        <Ionicons name="compass-outline" size={48} color={colors.textSecondary} />
+        <Ionicons
+          name="compass-outline"
+          size={48}
+          color={colors.textSecondary}
+        />
         <Text style={[styles.emptyTitle, { color: colors.textSecondary }]}>
           Ваш гид готов!
         </Text>
         <Text style={[styles.emptyText, { color: colors.textSecondary }]}>
-          Введите название места и нажмите «Сгенерировать»
+          Введите название места и нажмите «Сгенерировать».
         </Text>
       </View>
     );
@@ -53,9 +62,17 @@ export const TourViewer = (): JSX.Element => {
   // Сгенерированный тур
   return (
     <View style={styles.container}>
-      <View style={[styles.textCard, { backgroundColor: colors.bgCard, borderColor: colors.border }]}>
+      <View style={styles.controlsSection}>
+        <SpeechControls text={generatedText} placeName={placeName} />
+      </View>
+
+      <View
+        style={[
+          styles.textCard,
+          { backgroundColor: colors.bgCard, borderColor: colors.border },
+        ]}
+      >
         <ScrollView
-          style={styles.textScroll}
           contentContainerStyle={styles.textContent}
           showsVerticalScrollIndicator={true}
           nestedScrollEnabled={true}
@@ -65,16 +82,13 @@ export const TourViewer = (): JSX.Element => {
           </Text>
         </ScrollView>
       </View>
-
-      <View style={styles.controlsSection}>
-        <SpeechControls text={generatedText} placeName={placeName} />
-      </View>
     </View>
   );
 };
 
 const styles = StyleSheet.create({
   container: {
+    flex: 1,
     gap: 16,
     paddingHorizontal: 16,
   },
@@ -82,43 +96,40 @@ const styles = StyleSheet.create({
     marginHorizontal: 16,
     borderRadius: CARD_BORDER_RADIUS,
     borderWidth: 1,
-    overflow: 'hidden',
+    overflow: "hidden",
   },
   prepareHint: {
-    flexDirection: 'row',
-    alignItems: 'center',
+    flexDirection: "row",
+    alignItems: "center",
     gap: 6,
     paddingHorizontal: 16,
     paddingTop: 12,
   },
   prepareHintText: {
     fontSize: 13,
-    fontWeight: '500',
+    fontWeight: "500",
   },
   empty: {
-    alignItems: 'center',
-    justifyContent: 'center',
+    alignItems: "center",
+    justifyContent: "center",
     paddingVertical: 48,
     paddingHorizontal: 32,
     gap: 12,
   },
   emptyTitle: {
     fontSize: 18,
-    fontWeight: '700',
+    fontWeight: "700",
   },
   emptyText: {
     fontSize: 14,
-    textAlign: 'center',
+    textAlign: "center",
     lineHeight: 20,
   },
   textCard: {
+    flex: 1,
     borderRadius: CARD_BORDER_RADIUS,
     borderWidth: 1,
-    maxHeight: 400,
-    overflow: 'hidden',
-  },
-  textScroll: {
-    maxHeight: 400,
+    overflow: "hidden",
   },
   textContent: {
     padding: 16,

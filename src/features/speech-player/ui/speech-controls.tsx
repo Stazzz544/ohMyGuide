@@ -58,24 +58,22 @@ export const SpeechControls = ({ text, placeName }: SpeechControlsProps): JSX.El
         />
       </View>
 
-      {isSpeaking && progress > 0 && (
-        <View style={styles.progressContainer}>
-          <Text style={[styles.progressText, { color: colors.textSecondary }]}>
-            Прогресс: {progress}%
-          </Text>
-          <View style={[styles.progressBar, { backgroundColor: colors.border }]}>
-            <View
-              style={[
-                styles.progressFill,
-                {
-                  backgroundColor: colors.primary,
-                  width: `${progress}%`,
-                },
-              ]}
-            />
-          </View>
+      <View style={styles.progressContainer}>
+        <Text style={[styles.progressText, { color: colors.textSecondary }]}>
+          Прогресс: {progress}%
+        </Text>
+        <View style={[styles.progressBar, { backgroundColor: colors.border }]}>
+          <View
+            style={[
+              styles.progressFill,
+              {
+                backgroundColor: colors.primary,
+                width: `${progress}%`,
+              },
+            ]}
+          />
         </View>
-      )}
+      </View>
 
       <SpeedSlider value={speechRate} onValueChange={onRateChange} />
     </View>
