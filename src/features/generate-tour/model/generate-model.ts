@@ -43,6 +43,13 @@ sample({
   target: $error,
 });
 
+// Сброс ошибки при начале новой генерации
+sample({
+  clock: generateTourFx,
+  fn: () => null,
+  target: $error,
+});
+
 // Загрузка тура из сохранённых
 sample({
   clock: tourLoaded,

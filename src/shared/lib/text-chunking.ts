@@ -41,6 +41,160 @@ export const splitIntoSentences = (text: string): string[] => {
 };
 
 /**
+ * Структура текста с сохранением абзацев
+ */
+export type ParagraphStructure = {
+  sentences: string[];
+  startIndex: number;
+  endIndex: number;
+};
+
+export type TextStructure = {
+  paragraphs: ParagraphStructure[];
+  allSentences: string[];
+};
+
+/**
+ * Информация об одном слове в глобальном контексте
+ */
+export type WordInfo = {
+  word: string;
+  globalIndex: number;
+  sentenceIndex: number;
+  indexInSentence: number;
+};
+
+/**
+ * Расширенная структура предложения с информацией о словах
+ */
+export type SentenceInfo = {
+  text: string;
+  words: WordInfo[];
+  globalWordStart: number;
+  globalWordEnd: number;
+  wordCount: number;
+};
+
+/**
+ * Расширенная структура абзаца с информацией о словах
+ */
+export type ParagraphStructureV2 = {
+  sentences: SentenceInfo[];
+  startIndex: number;
+  endIndex: number;
+  globalWordStart: number;
+  globalWordEnd: number;
+};
+
+/**
+ * Расширенная структура текста с пословной разбивкой
+ */
+export type TextStructureV2 = {
+  paragraphs: ParagraphStructureV2[];
+  allSentences: SentenceInfo[];
+  allWords: WordInfo[];
+  totalWordCount: number;
+};
+
+/**
+ * Разбивает текст на структуру: абзацы → предложения
+ * Сохраняет оригинальную структуру с переносами строк
+ */
+export const splitTextWithStructure = (text: string): TextStructure => {
+  if (!text || text.trim().length === 0) {
+    return { paragraphs: [], allSentences: [] };
+  }
+
+  const paragraphTexts = text.split(/\n\n+/).filter((p) => p.trim().length > 0);
+
+  const allSentences: string[] = [];
+  const paragraphs: ParagraphStructure[] = paragraphTexts.map((paragraphText) => {
+    const sentences = splitIntoSentences(paragraphText);
+    const startIndex = allSentences.length;
+    allSentences.push(...sentences);
+    const endIndex = allSentences.length - 1;
+
+    return { sentences, startIndex, endIndex };
+  });
+
+  return { paragraphs, allSentences };
+};
+
+/**
+ * Разбивает предложение на слова (пунктуация остаётся приклеенной к слову)
+ */
+export const splitSentenceIntoWords = (sentence: string): string[] => {
+  return sentence.split(/\s+/).filter((w) => w.length > 0);
+};
+
+/**
+ * Разбивает текст на структуру: абзацы → предложения → слова
+ * Сохраняет глобальные индексы слов для пословного трекинга
+ */
+export const splitTextWithWordStructure = (text: string): TextStructureV2 => {
+  if (!text || text.trim().length === 0) {
+    return { paragraphs: [], allSentences: [], allWords: [], totalWordCount: 0 };
+  }
+
+  const paragraphTexts = text.split(/\n\n+/).filter((p) => p.trim().length > 0);
+
+  const allSentences: SentenceInfo[] = [];
+  const allWords: WordInfo[] = [];
+  let globalWordIndex = 0;
+  let sentenceIndex = 0;
+
+  const paragraphs: ParagraphStructureV2[] = paragraphTexts.map((paragraphText) => {
+    const rawSentences = splitIntoSentences(paragraphText);
+    const startSentenceIndex = sentenceIndex;
+    const paragraphWordStart = globalWordIndex;
+
+    const sentenceInfos: SentenceInfo[] = rawSentences.map((sentenceText) => {
+      const rawWords = splitSentenceIntoWords(sentenceText);
+      const sentenceWordStart = globalWordIndex;
+
+      const words: WordInfo[] = rawWords.map((word, indexInSentence) => {
+        const wordInfo: WordInfo = {
+          word,
+          globalIndex: globalWordIndex,
+          sentenceIndex,
+          indexInSentence,
+        };
+        allWords.push(wordInfo);
+        globalWordIndex++;
+        return wordInfo;
+      });
+
+      const info: SentenceInfo = {
+        text: sentenceText,
+        words,
+        globalWordStart: sentenceWordStart,
+        globalWordEnd: Math.max(sentenceWordStart, globalWordIndex - 1),
+        wordCount: words.length,
+      };
+
+      allSentences.push(info);
+      sentenceIndex++;
+      return info;
+    });
+
+    return {
+      sentences: sentenceInfos,
+      startIndex: startSentenceIndex,
+      endIndex: Math.max(startSentenceIndex, sentenceIndex - 1),
+      globalWordStart: paragraphWordStart,
+      globalWordEnd: Math.max(paragraphWordStart, globalWordIndex - 1),
+    };
+  });
+
+  return {
+    paragraphs,
+    allSentences,
+    allWords,
+    totalWordCount: globalWordIndex,
+  };
+};
+
+/**
  * Группирует предложения в чанки до достижения maxChunkSize
  */
 const groupSentencesIntoChunks = (sentences: string[], maxChunkSize: number): string[] => {
