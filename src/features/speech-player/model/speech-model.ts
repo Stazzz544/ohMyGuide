@@ -36,7 +36,6 @@ const $currentSentenceIndex = createStore<number>(0);
 const $selectedVoice = createStore<string | null>(null);
 const $availableVoices = createStore<Speech.Voice[]>([]);
 const $progress = createStore<number>(0);
-const $isChangingSpeed = createStore<boolean>(false);
 
 // --- Events ---
 
@@ -144,11 +143,9 @@ sample({
   target: $isSpeaking,
 });
 
-// Установить false при stopFx.done ТОЛЬКО если НЕ меняем скорость
+// Установить false при stopFx.done
 sample({
   clock: stopFx.done,
-  source: $isChangingSpeed,
-  filter: (isChangingSpeed) => !isChangingSpeed,
   fn: () => false,
   target: $isSpeaking,
 });
@@ -162,11 +159,9 @@ sample({
   target: $progress,
 });
 
-// Сбросить прогресс при ручной остановке (не при смене скорости)
+// Сбросить прогресс при остановке
 sample({
   clock: stopFx.done,
-  source: $isChangingSpeed,
-  filter: (isChangingSpeed) => !isChangingSpeed,
   fn: () => 0,
   target: $progress,
 });
@@ -176,51 +171,6 @@ sample({
   clock: rateChanged,
   filter: (rate) => rate >= MIN_SPEECH_RATE && rate <= MAX_SPEECH_RATE,
   target: $speechRate,
-});
-
-// 11a. При изменении скорости во время воспроизведения - установить флаг
-sample({
-  clock: rateChanged,
-  source: $isSpeaking,
-  filter: (isSpeaking) => isSpeaking,
-  fn: () => true,
-  target: $isChangingSpeed,
-});
-
-// 11b. Остановить текущее предложение при изменении скорости
-sample({
-  clock: rateChanged,
-  source: $isSpeaking,
-  filter: (isSpeaking) => isSpeaking,
-  target: stopFx,
-});
-
-// 11c. После остановки - если это была смена скорости, перезапустить текущее предложение
-sample({
-  clock: stopFx.done,
-  source: {
-    isChangingSpeed: $isChangingSpeed,
-    sentences: $sentences,
-    index: $currentSentenceIndex,
-    rate: $speechRate,
-    voice: $selectedVoice,
-  },
-  filter: ({ isChangingSpeed, sentences, index }) => isChangingSpeed && index < sentences.length,
-  fn: ({ sentences, index, rate, voice }) => ({
-    text: sentences[index],  // ← Перезапускаем ТЕКУЩЕЕ предложение
-    rate,
-    voice: voice ?? undefined,
-  }),
-  target: speakSentenceFx,
-});
-
-// 11e. Сбросить флаг после перезапуска
-sample({
-  clock: speakSentenceFx,
-  source: $isChangingSpeed,
-  filter: (isChangingSpeed) => isChangingSpeed,
-  fn: () => false,
-  target: $isChangingSpeed,
 });
 
 // 12. Загрузка голосов
