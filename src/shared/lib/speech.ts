@@ -5,17 +5,19 @@ export type SpeakOptions = {
   text: string;
   rate?: number;
   voice?: string;
+  onStart?: () => void;
   onDone?: () => void;
   onError?: (error: Error) => void;
 };
 
 // Обёртка над expo-speech
 export const speechService = {
-  speak({ text, rate = DEFAULT_SPEECH_RATE, voice, onDone, onError }: SpeakOptions): void {
+  speak({ text, rate = DEFAULT_SPEECH_RATE, voice, onStart, onDone, onError }: SpeakOptions): void {
     Speech.speak(text, {
       language: SPEECH_LANGUAGE,
       rate,
       voice,
+      onStart,
       onDone,
       onError: (error) => {
         onError?.(new Error(String(error)));

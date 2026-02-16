@@ -9,15 +9,16 @@ import type { ThemeColors } from '@app/shared/theme/colors';
 import { CARD_BORDER_RADIUS } from '@app/shared/config';
 import { SpeechControls, speechModel } from '@app/features/speech-player';
 import { generateModel } from '@app/features/generate-tour';
-import type { TextStructure } from '@app/shared/lib';
+import type { TextStructureV2 } from '@app/shared/lib';
 
 type HighlightedTextProps = {
-  structure: TextStructure;
-  currentIndex: number;
+  structure: TextStructureV2;
+  currentWordIndex: number;
   colors: ThemeColors;
+  onWordPress: (globalWordIndex: number) => void;
 };
 
-const HighlightedText = ({ structure, currentIndex, colors }: HighlightedTextProps): JSX.Element => {
+const HighlightedText = ({ structure, currentWordIndex, colors, onWordPress }: HighlightedTextProps): JSX.Element => {
   const scrollViewRef = useRef<ScrollView>(null);
   const paragraphPositions = useRef<Record<number, number>>({});
   const isUserScrolling = useRef<boolean>(false);
@@ -46,14 +47,14 @@ const HighlightedText = ({ structure, currentIndex, colors }: HighlightedTextPro
     }
 
     const currentParagraph = structure.paragraphs.findIndex(
-      (p) => currentIndex >= p.startIndex && currentIndex <= p.endIndex,
+      (p) => currentWordIndex >= p.globalWordStart && currentWordIndex <= p.globalWordEnd,
     );
 
     if (currentParagraph >= 0 && scrollViewRef.current) {
       const y = paragraphPositions.current[currentParagraph] ?? 0;
       scrollViewRef.current.scrollTo({ y: Math.max(0, y - 20), animated: true });
     }
-  }, [currentIndex, structure]);
+  }, [currentWordIndex, structure]);
 
   return (
     <ScrollView
@@ -71,27 +72,32 @@ const HighlightedText = ({ structure, currentIndex, colors }: HighlightedTextPro
           onLayout={(event) => handleParagraphLayout(pIndex, event)}
         >
           <Text style={styles.tourText}>
-            {paragraph.sentences.map((sentence, sIndex) => {
-              const globalIndex = paragraph.startIndex + sIndex;
-              const isRead = globalIndex < currentIndex;
-              const isCurrent = globalIndex === currentIndex;
+            {paragraph.sentences.map((sentence, sIndex) => (
+              <Text key={`s-${paragraph.startIndex + sIndex}`}>
+                {sentence.words.map((wordInfo, wIndex) => {
+                  const isRead = wordInfo.globalIndex < currentWordIndex;
+                  const isCurrent = wordInfo.globalIndex === currentWordIndex;
 
-              return (
-                <Text
-                  key={globalIndex}
-                  style={[
-                    isRead && { color: colors.textSecondary, opacity: 0.6 },
-                    isCurrent && {
-                      color: colors.primary,
-                      backgroundColor: colors.primary + '20',
-                    },
-                    !isRead && !isCurrent && { color: colors.textPrimary },
-                  ]}
-                >
-                  {sentence}{sIndex < paragraph.sentences.length - 1 ? ' ' : ''}
-                </Text>
-              );
-            })}
+                  return (
+                    <Text
+                      key={wordInfo.globalIndex}
+                      onPress={() => onWordPress(wordInfo.globalIndex)}
+                      style={[
+                        isRead && { color: colors.textSecondary, opacity: 0.6 },
+                        isCurrent && {
+                          color: colors.primary,
+                          backgroundColor: colors.primary + '20',
+                        },
+                        !isRead && !isCurrent && { color: colors.textPrimary },
+                      ]}
+                    >
+                      {wordInfo.word}{wIndex < sentence.words.length - 1 ? ' ' : ''}
+                    </Text>
+                  );
+                })}
+                {sIndex < paragraph.sentences.length - 1 ? ' ' : ''}
+              </Text>
+            ))}
           </Text>
         </View>
       ))}
@@ -109,11 +115,19 @@ export const TourViewer = (): JSX.Element => {
     isPrepareMode: generateModel.$isPrepareMode,
   });
 
-  const { isSpeaking, textStructure, currentSentenceIndex } = useUnit({
+  const { isSpeaking, textStructure, currentWordIndex, onSeekWord } = useUnit({
     isSpeaking: speechModel.$isSpeaking,
     textStructure: speechModel.$textStructure,
-    currentSentenceIndex: speechModel.$currentSentenceIndex,
+    currentWordIndex: speechModel.$currentWordIndex,
+    onSeekWord: speechModel.seekToWord,
   });
+
+  const handleWordPress = useCallback(
+    (globalWordIndex: number) => {
+      onSeekWord(globalWordIndex);
+    },
+    [onSeekWord],
+  );
 
   // Skeleton при загрузке
   if (isGenerating) {
@@ -172,8 +186,9 @@ export const TourViewer = (): JSX.Element => {
         {isSpeaking && textStructure ? (
           <HighlightedText
             structure={textStructure}
-            currentIndex={currentSentenceIndex}
+            currentWordIndex={currentWordIndex}
             colors={colors}
+            onWordPress={handleWordPress}
           />
         ) : (
           <ScrollView
