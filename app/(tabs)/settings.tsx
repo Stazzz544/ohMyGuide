@@ -1,10 +1,10 @@
-import { ScrollView, View, Text, StyleSheet } from 'react-native';
-import { JSX } from 'react';
-import { Ionicons } from '@expo/vector-icons';
-import { useTheme } from '@app/shared/theme';
-import { Button } from '@app/shared/ui';
-import { ProviderSelector } from '@app/features/ai-settings';
-import { VoiceSelector } from '@app/features/speech-player';
+import { ScrollView, View, Text, StyleSheet } from "react-native";
+import { JSX } from "react";
+import { Ionicons } from "@expo/vector-icons";
+import { useTheme } from "@app/shared/theme";
+import { Button } from "@app/shared/ui";
+import { ProviderSelector } from "@app/features/ai-settings";
+import { VoiceSelector } from "@app/features/speech-player";
 
 export default function SettingsScreen(): JSX.Element {
   const { colors, isDark, toggleTheme } = useTheme();
@@ -28,12 +28,12 @@ export default function SettingsScreen(): JSX.Element {
           Оформление
         </Text>
         <Button
-          label={isDark ? 'Светлая тема' : 'Тёмная тема'}
+          label={isDark ? "Светлая тема" : "Тёмная тема"}
           onPress={toggleTheme}
           variant="outline"
           icon={
             <Ionicons
-              name={isDark ? 'sunny-outline' : 'moon-outline'}
+              name={isDark ? "sunny-outline" : "moon-outline"}
               size={18}
               color={colors.primary}
             />
@@ -46,11 +46,11 @@ export default function SettingsScreen(): JSX.Element {
           О приложении
         </Text>
         <Text style={[styles.aboutText, { color: colors.textSecondary }]}>
-          OhMyGuide — AI-гид для самостоятельных туристов.{'\n'}
+          OhMyGuide — AI-гид для самостоятельных туристов.{"\n"}
           Генерирует увлекательные экскурсии по любому месту и озвучивает их.
         </Text>
         <Text style={[styles.version, { color: colors.textSecondary }]}>
-          Версия 1.0.0
+          Версия 1.1.0
         </Text>
       </View>
     </ScrollView>
@@ -71,7 +71,7 @@ const styles = StyleSheet.create({
   },
   sectionTitle: {
     fontSize: 18,
-    fontWeight: '700',
+    fontWeight: "700",
   },
   aboutText: {
     fontSize: 14,
