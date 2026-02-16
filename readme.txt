@@ -1,9 +1,8 @@
-🔧 Давай проверим adb reverse:
-1. Проверь что reverse правила активны:
+проверим adb reverse:
+в powershell
 
 adb reverse --list
 Должны быть строки:
-
 
 tcp:8081 tcp:8081
 tcp:8082 tcp:8082
@@ -20,19 +19,12 @@ adb reverse tcp:19006 tcp:19006
 
 
 
+----------------------------------
 
-
-
+Запуск dev mode
 npx expo start --clear
 
+----------------------------------
 
-Вариант A: Локальная сборка
-
-
-cd /e/cooding/mobile/test-android-app/OhMyGuide
-npx expo run:android --variant release
-Вариант B: EAS Build (рекомендуется для production)
-
-
-cd /e/cooding/mobile/test-android-app/OhMyGuide
+Сборка
 eas build --profile preview --platform android
