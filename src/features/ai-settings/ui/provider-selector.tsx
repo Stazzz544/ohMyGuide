@@ -4,7 +4,7 @@ import { useUnit } from 'effector-react';
 import { Ionicons } from '@expo/vector-icons';
 import { useTheme } from '@app/shared/theme';
 import { TextInput, Card } from '@app/shared/ui';
-import { PROVIDER_LIST } from '@app/shared/api';
+import { PROVIDER_LIST, AI_PROVIDERS } from '@app/shared/api';
 import { BORDER_RADIUS } from '@app/shared/config';
 import { settingsModel } from '../model/settings-model';
 
@@ -66,6 +66,14 @@ export const ProviderSelector = (): JSX.Element => {
           label="API-ключ"
           placeholder="Введите ваш API-ключ..."
         />
+        {AI_PROVIDERS[provider].apiKeyHint ? (
+          <View style={[styles.hint, { backgroundColor: `${colors.primary}12` }]}>
+            <Ionicons name="information-circle-outline" size={16} color={colors.primary} />
+            <Text style={[styles.hintText, { color: colors.textSecondary }]}>
+              {AI_PROVIDERS[provider].apiKeyHint}
+            </Text>
+          </View>
+        ) : null}
         {!apiKey.trim() ? (
           <View style={[styles.warning, { backgroundColor: `${colors.warning}20` }]}>
             <Ionicons name="warning-outline" size={16} color={colors.warning} />
@@ -106,6 +114,18 @@ const styles = StyleSheet.create({
   },
   apiKeySection: {
     gap: 8,
+  },
+  hint: {
+    flexDirection: 'row',
+    alignItems: 'flex-start',
+    gap: 8,
+    padding: 10,
+    borderRadius: 8,
+  },
+  hintText: {
+    fontSize: 13,
+    flex: 1,
+    lineHeight: 18,
   },
   warning: {
     flexDirection: 'row',

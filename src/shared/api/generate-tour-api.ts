@@ -16,10 +16,16 @@ export const generateTourApi = async ({
 }: GenerateTourParams): Promise<string> => {
   const provider = AI_PROVIDERS[providerId];
 
+  // Для провайдеров с OAuth (GigaChat) получаем access token из авторизационных данных
+  const effectiveApiKey = provider.getAccessToken
+    ? await provider.getAccessToken(apiKey)
+    : apiKey;
+
   const { path, body, headers } = provider.formatRequest({
     model: provider.defaultModel,
     systemPrompt: TOUR_SYSTEM_PROMPT,
     userMessage: `Создай экскурсию по месту: ${placeName}`,
+    credentials: apiKey, // Сырой ввод нужен провайдерам, которые парсят его сами (YandexGPT)
   });
 
   const data = await apiClient.request<unknown>({
@@ -28,8 +34,8 @@ export const generateTourApi = async ({
     method: 'POST',
     body,
     headers,
-    apiKey,
-    authStyle: providerId === 'anthropic' ? 'x-api-key' : 'bearer',
+    apiKey: effectiveApiKey,
+    authStyle: provider.authStyle,
   });
 
   const text = provider.parseResponse(data);

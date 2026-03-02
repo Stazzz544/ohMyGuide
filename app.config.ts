@@ -23,6 +23,7 @@ export default ({ config }: ConfigContext): ExpoConfig => ({
   },
   ios: {
     supportsTablet: true,
+    bundleIdentifier: 'com.ohmyguide.app',
   },
   android: {
     package: 'com.ohmyguide.app',

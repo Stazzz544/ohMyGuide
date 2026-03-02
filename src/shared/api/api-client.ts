@@ -14,8 +14,10 @@ type RequestConfig = {
   body?: Record<string, unknown>;
   headers?: Record<string, string>;
   apiKey: string;
-  // Для Anthropic ключ передаётся через x-api-key, для остальных — через Bearer
-  authStyle?: 'bearer' | 'x-api-key';
+  // bearer: Authorization: Bearer <key>
+  // x-api-key: x-api-key: <key>
+  // none: провайдер сам выставляет заголовки авторизации через formatRequest
+  authStyle?: 'bearer' | 'x-api-key' | 'none';
   timeout?: number;
 };
 
@@ -40,9 +42,10 @@ export const apiClient = {
     const authHeaders: Record<string, string> = {};
     if (authStyle === 'bearer') {
       authHeaders['Authorization'] = `Bearer ${apiKey}`;
-    } else {
+    } else if (authStyle === 'x-api-key') {
       authHeaders['x-api-key'] = apiKey;
     }
+    // authStyle === 'none': авторизация задаётся провайдером через headers в formatRequest
 
     try {
       const response = await fetch(`${baseUrl}${path}`, {
