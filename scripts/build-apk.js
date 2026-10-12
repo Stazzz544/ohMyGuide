@@ -4,7 +4,9 @@ const path = require('node:path');
 
 const PROJECT_ROOT = path.resolve(__dirname, '..');
 const ANDROID_DIR = path.join(PROJECT_ROOT, 'android');
-const APK_PATH = path.join(ANDROID_DIR, 'app', 'build', 'outputs', 'apk', 'release', 'app-release.apk');
+const RELEASE_DIR = path.join(ANDROID_DIR, 'app', 'build', 'outputs', 'apk', 'release');
+const GRADLE_APK_PATH = path.join(RELEASE_DIR, 'app-release.apk');
+const APK_PATH = path.join(RELEASE_DIR, 'oh-my-guide.apk');
 const DEFAULT_JAVA_HOME = 'C:\\Program Files\\Android\\Android Studio\\jbr';
 const DEFAULT_ANDROID_HOME = path.join(process.env.LOCALAPPDATA ?? '', 'Android', 'Sdk');
 
@@ -42,6 +44,8 @@ if (!fs.existsSync(localProperties)) {
 }
 
 run('.\\gradlew.bat assembleRelease', ANDROID_DIR, env);
+
+fs.renameSync(GRADLE_APK_PATH, APK_PATH);
 
 const sizeMb = (fs.statSync(APK_PATH).size / 1024 / 1024).toFixed(1);
 console.log(`\n[build-apk] Готово: ${APK_PATH} (${sizeMb} МБ)`);

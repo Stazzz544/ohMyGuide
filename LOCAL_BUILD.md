@@ -8,7 +8,7 @@
 npm run build:apk
 ```
 
-Скрипт [scripts/build-apk.js](scripts/build-apk.js) выполняет шаги 1 и 3 сам: берёт `JAVA_HOME` / `ANDROID_HOME` из окружения, а если они не заданы — JBR из Android Studio и `%LOCALAPPDATA%\Android\Sdk`; при отсутствии `android/` запускает `npx expo prebuild`, при отсутствии `android/local.properties` создаёт его. Шаг 2 (`prebuild --clean` после правок `app.config.ts`) — по-прежнему вручную. Ниже — то же самое руками.
+Скрипт [scripts/build-apk.js](scripts/build-apk.js) выполняет шаги 1 и 3 сам: берёт `JAVA_HOME` / `ANDROID_HOME` из окружения, а если они не заданы — JBR из Android Studio и `%LOCALAPPDATA%\Android\Sdk`; при отсутствии `android/` запускает `npx expo prebuild`, при отсутствии `android/local.properties` создаёт его. Шаг 2 (`prebuild --clean` после правок `app.config.ts`) — по-прежнему вручную. Готовый файл скрипт переименовывает в `android\app\build\outputs\apk\release\oh-my-guide.apk`. Ниже — то же самое руками.
 
 ## Предварительные требования (ставится один раз)
 
@@ -61,6 +61,8 @@ $env:ANDROID_HOME = "C:\Users\basileus\AppData\Local\Android\Sdk"
 ```
 E:\cooding\mobile\OhMyGuide\android\app\build\outputs\apk\release\app-release.apk
 ```
+
+При сборке через `npm run build:apk` тот же файл называется `oh-my-guide.apk`.
 
 Размер ~75 МБ (фактически собиралось 78 173 033 байт).
 
