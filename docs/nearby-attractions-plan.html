@@ -1,0 +1,2012 @@
+<!doctype html>
+<html lang="ru">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+</head>
+<body>
+<title>Достопримечательности поблизости</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=JetBrains+Mono:wght@400;500&family=Old+Standard+TT:wght@400;700&family=Onest:wght@400;500;600;700&display=swap">
+<style>
+/* Layout: лист путеводителя — колонка текста до 72ch и «приборы» (телефон, схема, демо) во всю ширину 1120px */
+:root{
+  --bg:#f0f3ef;--surface:#ffffff;--surface-2:#e5eae4;--ink:#15232a;--muted:#56676c;--line:#cdd6d1;
+  --route:#2356c4;--route-soft:#e0e8f9;--on-route:#ffffff;--pin:#d4442c;
+  --ok:#1b7548;--ok-soft:#dcefe2;--warn:#8f5c06;--warn-soft:#f6ead3;--risk:#ae3626;--risk-soft:#f7e0db;
+  --map-land:#eceee8;--map-block:#dfe3da;--map-park:#cbe0bd;--map-water:#b6d3e2;--map-water-ink:#4f7f99;--map-road:#ffffff;--map-road-edge:#d3d9d0;--route-casing:#ffffff;
+  --frame:#1b2327;--camera:#05080a;--scrim:rgb(12 22 26 / .42);--on-scrim:#ffffff;--code-bg:#e7ece7;
+  --syn-str:#1b7548;--syn-kw:#2356c4;--syn-com:#6f7f83;
+  --shadow:0 1px 2px rgb(20 36 42 / .06),0 8px 24px rgb(20 36 42 / .08);
+  --shadow-lg:0 2px 6px rgb(20 36 42 / .10),0 24px 60px rgb(20 36 42 / .18);
+  --font-display:"Old Standard TT","Times New Roman",Georgia,serif;
+  --font-body:"Onest","Segoe UI",system-ui,-apple-system,sans-serif;
+  --font-mono:"JetBrains Mono",ui-monospace,"Cascadia Mono",Consolas,monospace;
+  --radius:12px;
+}
+@media (prefers-color-scheme: dark){
+  :root:not([data-theme="light"]){
+    --bg:#0f1618;--surface:#162125;--surface-2:#1d2a2f;--ink:#e3eae8;--muted:#94a5a8;--line:#2b3a3f;
+    --route:#77a0f5;--route-soft:#1c2a47;--on-route:#0b1426;--pin:#f27b63;
+    --ok:#68cc98;--ok-soft:#15342a;--warn:#e3b45f;--warn-soft:#352b12;--risk:#f08c7a;--risk-soft:#3b1f1a;
+    --map-land:#141d20;--map-block:#1a2529;--map-park:#1a3024;--map-water:#16303d;--map-water-ink:#79a5bd;--map-road:#2a373b;--map-road-edge:#1d282b;--route-casing:#0e1518;
+    --frame:#2c393e;--camera:#05080a;--scrim:rgb(0 0 0 / .55);--on-scrim:#ffffff;--code-bg:#111a1d;
+    --syn-str:#7fd3a6;--syn-kw:#93b3f7;--syn-com:#7d8f92;
+    --shadow:0 1px 2px rgb(0 0 0 / .4),0 8px 24px rgb(0 0 0 / .3);
+    --shadow-lg:0 2px 6px rgb(0 0 0 / .5),0 24px 60px rgb(0 0 0 / .45);
+    color-scheme:dark;
+  }
+}
+:root[data-theme="dark"]{
+  --bg:#0f1618;--surface:#162125;--surface-2:#1d2a2f;--ink:#e3eae8;--muted:#94a5a8;--line:#2b3a3f;
+  --route:#77a0f5;--route-soft:#1c2a47;--on-route:#0b1426;--pin:#f27b63;
+  --ok:#68cc98;--ok-soft:#15342a;--warn:#e3b45f;--warn-soft:#352b12;--risk:#f08c7a;--risk-soft:#3b1f1a;
+  --map-land:#141d20;--map-block:#1a2529;--map-park:#1a3024;--map-water:#16303d;--map-water-ink:#79a5bd;--map-road:#2a373b;--map-road-edge:#1d282b;--route-casing:#0e1518;
+  --frame:#2c393e;--camera:#05080a;--scrim:rgb(0 0 0 / .55);--on-scrim:#ffffff;--code-bg:#111a1d;
+  --syn-str:#7fd3a6;--syn-kw:#93b3f7;--syn-com:#7d8f92;
+  --shadow:0 1px 2px rgb(0 0 0 / .4),0 8px 24px rgb(0 0 0 / .3);
+  --shadow-lg:0 2px 6px rgb(0 0 0 / .5),0 24px 60px rgb(0 0 0 / .45);
+  color-scheme:dark;
+}
+@property --zoom{syntax:"<number>";inherits:true;initial-value:1}
+
+*,*::before,*::after{box-sizing:border-box}
+html{-webkit-text-size-adjust:100%;scroll-behavior:smooth}
+body{margin:0;background:var(--bg);color:var(--ink);font:400 16px/1.6 var(--font-body);padding-inline:clamp(16px,4vw,40px);padding-block:0 72px}
+[hidden]{display:none!important}
+img{max-width:100%}
+a{color:var(--route);text-underline-offset:3px}
+:focus-visible{outline:2px solid var(--route);outline-offset:2px}
+.wrap{max-width:1120px;margin-inline:auto}
+h1,h2{font-family:var(--font-display);font-weight:700;line-height:1.08;margin:0;text-wrap:balance}
+h1{font-size:clamp(1.6rem,7.4vw,3.7rem);letter-spacing:-.01em;hyphens:auto;overflow-wrap:break-word}
+h2{font-size:clamp(1.75rem,1.3rem + 1.5vw,2.45rem)}
+h3{font-size:1.05rem;line-height:1.35;font-weight:600;margin:0;text-wrap:balance}
+p{margin:0}
+code{font-family:var(--font-mono);font-size:.86em;background:var(--surface-2);padding:.08em .38em;border-radius:5px}
+.eyebrow{font:500 12px/1.5 var(--font-mono);letter-spacing:.08em;text-transform:uppercase;color:var(--muted)}
+.lead{font-size:1.075rem;color:var(--muted);max-width:68ch}
+.section{padding-block:80px 0;display:grid;gap:28px}
+.section-head{display:grid;gap:12px;max-width:74ch}
+.muted{color:var(--muted)}
+
+.topbar{display:flex;flex-wrap:wrap;align-items:center;justify-content:space-between;gap:10px 28px;padding-block:20px;border-bottom:1px solid var(--line)}
+.brand{display:flex;align-items:center;gap:10px;font-weight:600;font-size:15px}
+.brand svg{display:block}
+.toc{display:flex;flex-wrap:wrap;gap:4px 18px;font-size:14px}
+.toc a{color:var(--muted);text-decoration:none}
+.toc a:hover{color:var(--ink);text-decoration:underline}
+
+/* hero */
+.hero{display:grid;gap:36px 56px;padding-block:52px 0;grid-template-columns:minmax(0,1fr);align-items:start}
+.hero > *{min-width:0}
+.hero-intro{display:grid;gap:18px}
+@media (min-width:920px){
+  .hero{grid-template-columns:minmax(0,1fr) 316px;grid-template-areas:"intro phone" "steps phone"}
+  .hero-intro{grid-area:intro}
+  .steps{grid-area:steps}
+  .phone-col{grid-area:phone;position:sticky;top:calc(env(safe-area-inset-top,0px) + 24px)}
+}
+.facts{display:grid;grid-template-columns:repeat(auto-fit,minmax(150px,1fr));margin:6px 0 0;border-top:1px solid var(--line)}
+.facts div{padding:12px 16px 0 0}
+.facts dt{font-size:13px;color:var(--muted)}
+.facts dd{margin:2px 0 0;font-weight:600;font-variant-numeric:tabular-nums}
+
+.steps{list-style:none;margin:0;padding:0;display:grid;gap:10px;counter-reset:step}
+.step{position:relative;display:grid;grid-template-columns:32px minmax(0,1fr);gap:6px 14px;padding:16px 18px 18px;border:1px solid var(--line);border-radius:var(--radius);background:var(--surface);overflow:hidden;transition:border-color .25s,background-color .25s}
+.step::before{counter-increment:step;content:counter(step);grid-row:1 / span 3;width:32px;height:32px;border-radius:50%;display:grid;place-items:center;font:500 14px/1 var(--font-mono);background:var(--surface-2);color:var(--muted);transition:background-color .25s,color .25s}
+.step > *{grid-column:2}
+.step.is-active{border-color:var(--route);background:var(--route-soft)}
+.step.is-active::before{background:var(--route);color:var(--on-route)}
+.step-btn{appearance:none;border:0;background:none;padding:0;margin:0;font:inherit;color:inherit;text-align:left;cursor:pointer}
+.step-btn::after{content:"";position:absolute;inset:0}
+.step-btn:focus-visible{outline:none}
+.step:has(.step-btn:focus-visible){outline:2px solid var(--route);outline-offset:2px}
+.step p{color:var(--muted);font-size:15px}
+.tags{display:flex;flex-wrap:wrap;gap:6px}
+.tag{font:500 12px/1.5 var(--font-mono);padding:2px 8px;border-radius:6px;background:var(--surface-2);color:var(--ink)}
+.step.is-active .tag{background:var(--surface)}
+.step-bar{position:absolute;left:0;bottom:0;height:3px;width:100%;background:var(--route);transform:scaleX(0);transform-origin:left}
+.step.is-active .step-bar{animation:bar var(--dur,5s) linear both}
+.is-paused .step-bar{animation-play-state:paused}
+@keyframes bar{to{transform:scaleX(1)}}
+
+/* phone */
+.phone-col{display:grid;justify-items:center;gap:14px}
+.phone{position:relative;width:300px;max-width:100%;aspect-ratio:300 / 620;padding:10px;border-radius:46px;background:var(--frame);box-shadow:var(--shadow-lg)}
+.phone::after{content:"";position:absolute;top:19px;left:50%;width:9px;height:9px;margin-left:-4.5px;border-radius:50%;background:var(--camera);z-index:9}
+.screen{position:relative;height:100%;border-radius:36px;overflow:hidden;background:var(--map-land);isolation:isolate;font-size:12px;line-height:1.35;color:var(--ink)}
+.map{position:absolute;inset:0;width:100%;height:100%;display:block}
+.is-paused .phone *,.is-paused .phone *::before,.is-paused .phone *::after{animation-play-state:paused!important}
+.statusbar{position:absolute;top:0;left:0;right:0;height:30px;display:flex;align-items:center;justify-content:space-between;padding:8px 26px 0;font:600 11px/1 var(--font-body);z-index:6}
+.statusbar .ico{display:flex;gap:5px;align-items:center}
+.statusbar svg{display:block;fill:currentColor}
+.search-chip{position:absolute;top:38px;left:12px;right:12px;display:flex;align-items:center;gap:8px;padding:9px 14px;border-radius:999px;background:var(--surface);box-shadow:var(--shadow);font-weight:500;z-index:3;transition:opacity .3s,transform .3s}
+.search-chip svg{flex:none;fill:none;stroke:var(--muted);stroke-width:2}
+.search-chip .km{margin-left:auto;font:500 11px/1 var(--font-mono);color:var(--route)}
+[data-scene="3"] .search-chip,[data-scene="4"] .search-chip{opacity:0;transform:translateY(-8px)}
+
+.m-land{fill:var(--map-land)}
+.m-block{fill:var(--map-block)}
+.m-park{fill:var(--map-park)}
+.m-water{fill:none;stroke:var(--map-water);stroke-width:22;stroke-linecap:round}
+.m-water-label{fill:var(--map-water-ink);font:italic 500 8px var(--font-body)}
+.m-edge{fill:none;stroke:var(--map-road-edge);stroke-width:9;stroke-linecap:round;vector-effect:non-scaling-stroke}
+.m-road{fill:none;stroke:var(--map-road);stroke-width:6.5;stroke-linecap:round;vector-effect:non-scaling-stroke}
+.m-edge.minor{stroke-width:6}
+.m-road.minor{stroke-width:4}
+.map-zoom{--zoom:1;transform:translate(140px,300px) scale(var(--zoom)) translate(-140px,-300px);transition:--zoom 1.1s cubic-bezier(.45,0,.2,1)}
+[data-scene="3"] .map-zoom,[data-scene="4"] .map-zoom{--zoom:2.6}
+.counter{transform:scale(calc(1 / var(--zoom)))}
+
+.radius{fill:var(--route);fill-opacity:.08;stroke:var(--route);stroke-width:1.4;stroke-dasharray:5 4;vector-effect:non-scaling-stroke;opacity:0;transform-box:fill-box;transform-origin:center;transition:opacity .4s}
+[data-scene="2"] .radius{opacity:1;animation:grow 1.1s .15s cubic-bezier(.2,.8,.2,1) both}
+[data-scene="3"] .radius,[data-scene="4"] .radius{opacity:.3}
+@keyframes grow{from{transform:scale(0);opacity:0}}
+.radius-label{opacity:0}
+.radius-label text{font:600 9px var(--font-mono);fill:var(--route);paint-order:stroke;stroke:var(--map-land);stroke-width:3px;stroke-linejoin:round}
+[data-scene="2"] .radius-label{opacity:1;animation:fade .4s 1.1s both}
+@keyframes fade{from{opacity:0}}
+
+.pin{opacity:0;transition:opacity .4s}
+[data-scene="2"] .pin,[data-scene="3"] .pin,[data-scene="4"] .pin{opacity:1}
+[data-scene="3"] .pin:not(.target),[data-scene="4"] .pin:not(.target){opacity:.45}
+[data-scene="2"] .pin-drop{animation:drop .55s calc(.75s + var(--i) * .11s) cubic-bezier(.3,1.5,.5,1) both}
+@keyframes drop{from{transform:translateY(-22px);opacity:0}}
+.pin-body{fill:var(--pin);stroke:var(--surface);stroke-width:1.6}
+.pin-dot{fill:var(--surface)}
+.target .pin-drop{transition:transform .4s}
+[data-scene="3"] .target .pin-drop,[data-scene="4"] .target .pin-drop{transform:scale(1.3)}
+[data-scene="3"] .target .pin-body,[data-scene="4"] .target .pin-body{fill:var(--route)}
+.target-ring{fill:none;stroke:var(--route);stroke-width:2;opacity:0;transform-box:fill-box;transform-origin:center}
+[data-scene="3"] .target-ring{animation:ring 1.6s 1.3s ease-out infinite}
+@keyframes ring{0%{opacity:.7;transform:scale(.5)}100%{opacity:0;transform:scale(2.2)}}
+
+.me{opacity:1}
+[data-scene="1"] .me{animation:fade .45s 2.45s both}
+.me-dot{fill:var(--route);stroke:var(--surface);stroke-width:2.5}
+.me-halo{fill:var(--route);fill-opacity:.16}
+.me-pulse{fill:var(--route);opacity:0;transform-box:fill-box;transform-origin:center;animation:pulse 2.2s ease-out infinite}
+@keyframes pulse{0%{transform:scale(1);opacity:.45}100%{transform:scale(3.4);opacity:0}}
+
+.route-casing,.route-line{fill:none;stroke-linecap:round;stroke-linejoin:round;stroke-dasharray:100 120;stroke-dashoffset:0;opacity:0}
+.route-casing{stroke:var(--route-casing);stroke-width:3.6}
+.route-line{stroke:var(--route);stroke-width:2.3}
+[data-scene="3"] .route-casing,[data-scene="3"] .route-line{opacity:1;animation:draw 1.3s 1.25s cubic-bezier(.5,0,.3,1) both}
+[data-scene="4"] .route-casing,[data-scene="4"] .route-line{opacity:1}
+@keyframes draw{from{stroke-dashoffset:101}}
+
+.ov{position:absolute;visibility:hidden;z-index:4}
+.scrim{inset:0;background:var(--scrim)}
+.perm{left:14px;right:14px;top:29%;padding:20px 16px 14px;border-radius:24px;background:var(--surface);box-shadow:var(--shadow-lg);display:grid;gap:12px;text-align:center}
+.perm-icon{justify-self:center;width:34px;height:34px;border-radius:50%;display:grid;place-items:center;background:var(--route-soft)}
+.perm-icon svg{fill:var(--route)}
+.perm p{font-size:13px;font-weight:500;line-height:1.4}
+.perm-opts{display:grid;gap:6px}
+.perm-opt{position:relative;overflow:hidden;padding:10px;border-radius:999px;background:var(--surface-2);font-weight:500}
+.perm-opt.primary{background:var(--route-soft);color:var(--route)}
+.perm-opt.primary::after{content:"";position:absolute;left:50%;top:50%;width:16px;height:16px;margin:-8px;border-radius:50%;background:var(--route);opacity:0}
+[data-scene="1"] .scrim,[data-scene="1"] .perm{visibility:visible;opacity:0;animation:modal 4.8s both}
+[data-scene="1"] .perm-opt.primary::after{animation:tap .6s 1.75s ease-out both}
+@keyframes modal{0%{opacity:0}7%,46%{opacity:1}54%,100%{opacity:0}}
+@keyframes tap{0%{opacity:.35;transform:scale(0)}100%{opacity:0;transform:scale(14)}}
+.toast{left:50%;bottom:22px;transform:translateX(-50%);white-space:nowrap;padding:9px 14px;border-radius:999px;background:var(--ink);color:var(--bg);font-weight:500;display:flex;gap:8px;align-items:center}
+.toast i{width:7px;height:7px;border-radius:50%;background:var(--ok)}
+[data-scene="1"] .toast{visibility:visible;animation:toast .45s 2.7s both}
+@keyframes toast{from{opacity:0;transform:translate(-50%,12px)}}
+
+.sheet{left:0;right:0;bottom:0;height:47%;padding:8px 14px 0;border-radius:22px 22px 0 0;background:var(--surface);box-shadow:var(--shadow-lg);display:flex;flex-direction:column;gap:8px}
+.handle{flex:none;align-self:center;width:36px;height:4px;border-radius:2px;background:var(--line)}
+[data-scene="2"] .sheet{visibility:visible;animation:up .6s 1.8s cubic-bezier(.2,.8,.2,1) both}
+@keyframes up{from{transform:translateY(105%)}}
+.sheet-head{display:flex;justify-content:space-between;align-items:baseline;gap:8px}
+.sheet-head b{font-size:14px;font-weight:600}
+.sheet-head span{font:500 10.5px var(--font-mono);color:var(--muted)}
+.chips{display:flex;gap:5px}
+.chip{padding:4px 9px;border-radius:999px;border:1px solid var(--line);font-size:11px;font-weight:500;color:var(--muted)}
+.chip.on{background:var(--ink);border-color:var(--ink);color:var(--surface)}
+.plist{list-style:none;margin:0;padding:0;display:grid}
+.plist li{display:grid;grid-template-columns:34px minmax(0,1fr) auto;gap:10px;align-items:center;padding:7px 0;border-top:1px solid var(--line)}
+[data-scene="2"] .plist li{animation:fade-up .4s calc(2.3s + var(--i) * .09s) both}
+@keyframes fade-up{from{opacity:0;transform:translateY(6px)}}
+.thumb{width:34px;height:34px;border-radius:9px;display:grid;place-items:center;background:var(--surface-2)}
+.thumb svg{fill:var(--muted)}
+.plist li > span{min-width:0}
+.pname,.pkind{display:block}
+.pname{font-weight:600;font-size:12.5px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+.pkind{font-size:11px;color:var(--muted)}
+.pdist{font:500 11px var(--font-mono);text-align:right;white-space:nowrap}
+.pdist small{display:block;color:var(--muted);font-size:10px}
+
+.route-card{top:38px;left:12px;right:12px;padding:10px 14px;border-radius:16px;background:var(--surface);box-shadow:var(--shadow);display:grid;gap:2px}
+.route-card .to{font-size:11px;color:var(--muted)}
+.route-card .eta{font:600 18px/1.2 var(--font-body);color:var(--route)}
+.route-card .eta small{font-size:12px;color:var(--muted);font-weight:500}
+[data-scene="3"] .route-card{visibility:visible;animation:down .5s .9s cubic-bezier(.2,.8,.2,1) both}
+@keyframes down{from{transform:translateY(-150%)}}
+.route-sheet{left:0;right:0;bottom:0;padding:10px 16px 18px;border-radius:22px 22px 0 0;background:var(--surface);box-shadow:var(--shadow-lg);display:grid;gap:10px}
+.route-sheet b{font-size:14px}
+[data-scene="3"] .route-sheet{visibility:visible;animation:up .55s 2.75s cubic-bezier(.2,.8,.2,1) both}
+.btn-row{display:grid;grid-template-columns:1fr 1fr;gap:8px}
+.pbtn{padding:10px;border-radius:12px;text-align:center;font-weight:600;border:1px solid var(--line)}
+.pbtn.primary{background:var(--route);border-color:var(--route);color:var(--on-route)}
+
+.tour{left:0;right:0;bottom:0;top:11%;padding:10px 16px 16px;border-radius:24px 24px 0 0;background:var(--surface);box-shadow:var(--shadow-lg);display:flex;flex-direction:column;gap:9px}
+[data-scene="4"] .tour{visibility:visible;animation:up .6s .15s cubic-bezier(.2,.8,.2,1) both}
+.tour-art{flex:none;border-radius:14px;overflow:hidden}
+.tour-art svg{display:block;width:100%;height:auto}
+.tour-title{display:flex;justify-content:space-between;align-items:start;gap:8px}
+.tour-title b{font-size:16px;font-weight:600;line-height:1.2}
+.tour-title svg{flex:none;fill:none;stroke:var(--route);stroke-width:2}
+.tour-meta{font-size:11px;color:var(--muted)}
+.tour-text{flex:1;min-height:0;overflow:hidden;font-size:12px;line-height:1.5}
+.caret{display:inline-block;width:2px;height:1.05em;margin-left:1px;background:var(--route);vertical-align:-2px;animation:blink 1s steps(1) infinite}
+@keyframes blink{50%{opacity:0}}
+.player{flex:none;display:grid;grid-template-columns:36px minmax(0,1fr);gap:10px;align-items:center;padding:10px;border-radius:14px;background:var(--surface-2)}
+.play{width:36px;height:36px;border-radius:50%;background:var(--route);display:grid;place-items:center}
+.play svg{fill:var(--on-route)}
+.wave{display:flex;align-items:center;gap:2px;height:24px}
+.wave i{flex:1;height:100%;border-radius:2px;background:var(--route);opacity:.4;transform:scaleY(var(--h));transform-origin:center}
+[data-scene="4"] .wave i{animation:wave .8s calc(var(--i) * -.07s) ease-in-out infinite alternate}
+@keyframes wave{to{transform:scaleY(calc(var(--h) * .35 + .12));opacity:.9}}
+.player-meta{display:flex;justify-content:space-between;margin-top:4px;font:500 10px var(--font-mono);color:var(--muted)}
+
+.phone-ctrl{display:flex;flex-wrap:wrap;justify-content:center;align-items:center;gap:8px 14px;font-size:14px;color:var(--muted)}
+.btn{display:inline-flex;align-items:center;justify-content:center;gap:8px;padding:9px 14px;border-radius:10px;border:1px solid var(--line);background:var(--surface);color:var(--ink);font:500 14px/1.2 var(--font-body);cursor:pointer;transition:border-color .15s,background-color .15s,color .15s}
+.btn:hover{border-color:var(--muted)}
+.btn svg{flex:none;fill:currentColor}
+.btn[aria-pressed="true"]{background:var(--ink);border-color:var(--ink);color:var(--bg)}
+.btn.primary{background:var(--route);border-color:var(--route);color:var(--on-route)}
+.btn.primary:hover{filter:brightness(1.06)}
+.btn:disabled{opacity:.5;cursor:not-allowed}
+.btn.pill{border-radius:999px}
+.btn.small{padding:5px 11px;font-size:13px}
+
+/* stack */
+.stack{display:grid;border-top:1px solid var(--line)}
+.srow{display:grid;grid-template-columns:minmax(0,1fr);gap:8px 28px;padding:18px 0;border-bottom:1px solid var(--line)}
+.srow.head{display:none}
+@media (min-width:840px){
+  .srow{grid-template-columns:140px minmax(0,1.45fr) minmax(0,1fr) 150px;align-items:start}
+  .srow.head{display:grid;padding:10px 0}
+}
+.srow.head span,.task{font:500 12px/1.6 var(--font-mono);letter-spacing:.06em;text-transform:uppercase;color:var(--muted)}
+.sol{display:grid;gap:4px}
+.sol p,.limits{font-size:15px;color:var(--muted)}
+.badges{display:flex;flex-wrap:wrap;gap:6px;align-content:start}
+.badge{font:500 12.5px/1.5 var(--font-body);padding:3px 10px;border-radius:999px;white-space:nowrap}
+.badge.free{background:var(--ok-soft);color:var(--ok)}
+.badge.key{background:var(--warn-soft);color:var(--warn)}
+.badge.have{background:var(--route-soft);color:var(--route)}
+.badge.opt{background:var(--surface-2);color:var(--muted)}
+.total{display:flex;flex-wrap:wrap;gap:8px 24px;align-items:baseline;padding:18px 20px;border-radius:var(--radius);background:var(--surface);border:1px solid var(--line)}
+.total strong{font:700 1.9rem/1 var(--font-display)}
+.total p{color:var(--muted);max-width:70ch}
+
+/* flow */
+.diagram{overflow-x:auto;border:1px solid var(--line);border-radius:var(--radius);background:var(--surface);padding:12px}
+.diagram svg{display:block;min-width:880px;width:100%;height:auto}
+.fd-node rect{fill:var(--surface);stroke:var(--line);stroke-width:1.5}
+.fd-node.new rect{fill:var(--route-soft);stroke:var(--route)}
+.fd-node.have rect{fill:var(--ok-soft);stroke:var(--ok)}
+.fd-t{font:600 15px var(--font-body);fill:var(--ink)}
+.fd-s{font:400 12.5px var(--font-body);fill:var(--muted)}
+.fd-m{font:500 11px var(--font-mono);fill:var(--muted)}
+.fd-edge{fill:none;stroke:var(--muted);stroke-width:1.4}
+.fd-arrow{fill:var(--muted)}
+.fd-packet{fill:var(--route)}
+.fd-packet.have{fill:var(--ok)}
+.fd-label{font:500 11px var(--font-mono);fill:var(--muted);paint-order:stroke;stroke:var(--surface);stroke-width:5px;stroke-linejoin:round}
+.legend{display:flex;flex-wrap:wrap;gap:8px 22px;font-size:14px;color:var(--muted)}
+.legend span{display:inline-flex;align-items:center;gap:8px}
+.legend i{width:14px;height:14px;border-radius:4px;border:1.5px solid}
+.legend .l-new{background:var(--route-soft);border-color:var(--route)}
+.legend .l-have{background:var(--ok-soft);border-color:var(--ok)}
+.scroll-hint{font-size:13px;color:var(--muted)}
+@media (min-width:940px){.scroll-hint{display:none}}
+
+/* demo */
+.demo-bar{display:flex;flex-wrap:wrap;gap:8px;align-items:center}
+.demo-bar .sep{width:1px;height:24px;background:var(--line);margin-inline:4px}
+.status{font-size:14px;color:var(--muted);min-height:1.6em;display:flex;align-items:center;gap:10px}
+.status.loading::before{content:"";flex:none;width:13px;height:13px;border-radius:50%;border:2px solid var(--line);border-top-color:var(--route);animation:spin .8s linear infinite}
+@keyframes spin{to{transform:rotate(360deg)}}
+.notice{padding:14px 16px;border-radius:var(--radius);background:var(--warn-soft);border:1px solid var(--warn);font-size:15px;display:grid;gap:4px}
+.notice b{color:var(--warn)}
+.demo{display:grid;gap:16px;grid-template-columns:minmax(0,1fr)}
+@media (min-width:960px){.demo{grid-template-columns:minmax(0,1.6fr) minmax(0,1fr)}}
+.map-box{position:relative;height:clamp(320px,60vh,500px);border-radius:var(--radius);overflow:hidden;border:1px solid var(--line);background:var(--map-land)}
+#demo-map{position:absolute;inset:0}
+.zoom-ctrl{position:absolute;top:10px;right:10px;display:grid;z-index:3;border-radius:10px;overflow:hidden;box-shadow:var(--shadow);border:1px solid var(--line)}
+.zoom-ctrl button{width:38px;height:38px;border:0;background:var(--surface);color:var(--ink);font:500 20px/1 var(--font-body);cursor:pointer}
+.zoom-ctrl button + button{border-top:1px solid var(--line)}
+.zoom-ctrl button:hover{background:var(--surface-2)}
+.map-hint{position:absolute;left:10px;top:10px;z-index:3;max-width:calc(100% - 70px);padding:6px 10px;border-radius:8px;background:var(--surface);box-shadow:var(--shadow);font-size:12.5px;color:var(--muted)}
+.map-fallback{position:absolute;inset:0;z-index:4;display:grid;place-items:center;padding:24px;text-align:center;color:var(--muted);background:var(--surface)}
+.panel{display:flex;flex-direction:column;min-width:0;border:1px solid var(--line);border-radius:var(--radius);background:var(--surface);max-height:clamp(320px,60vh,500px)}
+@media (max-width:959px){.panel{max-height:440px}}
+.panel-head{padding:14px 16px;border-bottom:1px solid var(--line);display:flex;flex-wrap:wrap;justify-content:space-between;align-items:center;gap:8px}
+.panel-head h3{font-size:1rem}
+.panel-head .src{font-size:12.5px;color:var(--muted);flex-basis:100%}
+.sort{display:flex;gap:6px}
+.dlist{list-style:none;margin:0;padding:0;overflow-y:auto;flex:1;min-height:0}
+.ditem{display:grid;grid-template-columns:48px minmax(0,1fr) auto;gap:12px;align-items:center;width:100%;padding:10px 16px;border:0;border-bottom:1px solid var(--line);background:none;color:inherit;font:inherit;text-align:left;cursor:pointer}
+.ditem > span{min-width:0}
+.ditem:hover{background:var(--surface-2)}
+.ditem[aria-pressed="true"]{background:var(--route-soft)}
+.dthumb{width:48px;height:48px;border-radius:10px;object-fit:cover;background:var(--surface-2);display:grid;place-items:center}
+.dthumb svg{fill:var(--muted)}
+.dname{font-weight:600;font-size:15px;line-height:1.3;display:-webkit-box;-webkit-line-clamp:2;-webkit-box-orient:vertical;overflow:hidden}
+.ddesc{display:block;font-size:13px;color:var(--muted);white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+.ddist{font:500 13px var(--font-mono);text-align:right;font-variant-numeric:tabular-nums;white-space:nowrap}
+.ddist small{display:block;color:var(--muted);font-size:11.5px}
+.dempty{padding:20px 16px;color:var(--muted);font-size:15px}
+.skel{display:grid;grid-template-columns:48px minmax(0,1fr);gap:12px;align-items:center;padding:10px 16px;border-bottom:1px solid var(--line)}
+.skel i{display:block;height:48px;border-radius:10px;background:var(--surface-2);animation:breathe 1.2s ease-in-out infinite alternate}
+.skel span{display:grid;gap:8px}
+.skel span i{height:11px;border-radius:4px}
+.skel span i:last-child{width:60%}
+@keyframes breathe{to{opacity:.45}}
+.details{display:grid;gap:20px;padding:20px;border:1px solid var(--line);border-radius:var(--radius);background:var(--surface)}
+@media (min-width:880px){.details.has-place{grid-template-columns:minmax(0,1fr) minmax(0,1fr)}}
+.details-empty{color:var(--muted)}
+.d-main,.d-side{display:grid;gap:12px;align-content:start;min-width:0}
+.d-title{font:700 1.6rem/1.15 var(--font-display)}
+.d-desc{color:var(--muted)}
+.d-extract{font-size:15px;max-width:68ch}
+.d-actions{display:flex;flex-wrap:wrap;gap:8px}
+.route-stats{display:flex;flex-wrap:wrap;gap:6px 18px;align-items:baseline;padding:12px 14px;border-radius:10px;background:var(--route-soft)}
+.route-stats strong{font:700 1.5rem/1 var(--font-display);color:var(--route)}
+.route-stats span{color:var(--muted);font-size:14px}
+.error-text{color:var(--risk);font-size:14px}
+
+/* maplibre core */
+.maplibregl-map{position:relative;overflow:hidden;-webkit-tap-highlight-color:transparent;font:12px/20px var(--font-body)}
+.maplibregl-canvas{position:absolute;left:0;top:0}
+.maplibregl-canvas-container.maplibregl-interactive{cursor:grab}
+.maplibregl-canvas-container.maplibregl-interactive:active{cursor:grabbing}
+.maplibregl-canvas-container.maplibregl-touch-drag-pan,.maplibregl-canvas-container.maplibregl-touch-drag-pan .maplibregl-canvas{touch-action:pinch-zoom}
+.maplibregl-canvas-container.maplibregl-touch-zoom-rotate.maplibregl-touch-drag-pan,.maplibregl-canvas-container.maplibregl-touch-zoom-rotate.maplibregl-touch-drag-pan .maplibregl-canvas{touch-action:none}
+.maplibregl-canvas-container.maplibregl-touch-drag-pan.maplibregl-cooperative-gestures,.maplibregl-canvas-container.maplibregl-touch-drag-pan.maplibregl-cooperative-gestures .maplibregl-canvas{touch-action:pan-x pan-y}
+.maplibregl-ctrl-top-left,.maplibregl-ctrl-top-right,.maplibregl-ctrl-bottom-left,.maplibregl-ctrl-bottom-right{position:absolute;pointer-events:none;z-index:2}
+.maplibregl-ctrl-bottom-right{right:0;bottom:0}
+.maplibregl-ctrl-bottom-left{left:0;bottom:0}
+.maplibregl-ctrl{clear:both;pointer-events:auto;transform:translate(0)}
+.maplibregl-ctrl-bottom-right .maplibregl-ctrl{float:right}
+.maplibregl-ctrl-attrib{max-width:100%;padding:2px 8px;border-top-left-radius:8px;background:var(--surface);opacity:.94;color:var(--muted);font-size:11px;line-height:1.5}
+.maplibregl-ctrl-attrib a{color:var(--muted);text-decoration:none}
+.maplibregl-ctrl-attrib a:hover{text-decoration:underline}
+.maplibregl-ctrl-attrib-button{display:none}
+.maplibregl-marker{position:absolute;left:0;top:0;will-change:transform}
+.maplibregl-cooperative-gesture-screen{position:absolute;inset:0;z-index:99;display:flex;align-items:center;justify-content:center;padding:16px;text-align:center;background:var(--scrim);color:var(--on-scrim);font-size:15px;opacity:0;pointer-events:none;transition:opacity 1s .2s}
+.maplibregl-cooperative-gesture-screen.maplibregl-show{opacity:1;transition:opacity .05s}
+.maplibregl-cooperative-gesture-screen .maplibregl-mobile-message{display:none}
+@media (hover:none),(max-width:480px){
+  .maplibregl-cooperative-gesture-screen .maplibregl-desktop-message{display:none}
+  .maplibregl-cooperative-gesture-screen .maplibregl-mobile-message{display:block}
+}
+.demo-me{position:relative;width:18px;height:18px;border-radius:50%;background:var(--route);border:3px solid var(--surface);box-shadow:var(--shadow)}
+.demo-me::after{content:"";position:absolute;inset:-3px;border-radius:50%;background:var(--route);opacity:0;animation:me-pulse 2.2s ease-out infinite;z-index:-1}
+@keyframes me-pulse{0%{transform:scale(1);opacity:.4}100%{transform:scale(3.2);opacity:0}}
+
+/* integrate */
+.integrate{display:grid;gap:24px;grid-template-columns:minmax(0,1fr)}
+@media (min-width:1000px){.integrate{grid-template-columns:minmax(0,.85fr) minmax(0,1.15fr)}}
+.col{display:grid;gap:14px;align-content:start;min-width:0}
+pre.code{font-variant-ligatures:none;margin:0;padding:16px;border-radius:10px;background:var(--code-bg);overflow:auto;font:400 13px/1.6 var(--font-mono);white-space:pre;tab-size:2;color:var(--ink)}
+pre.code.wrap-text{white-space:pre-wrap;word-break:break-word;max-height:440px}
+.tree .t-new{color:var(--route)}
+.tree .t-mod{color:var(--warn)}
+.tree .c{color:var(--syn-com)}
+.tok-str{color:var(--syn-str)}
+.tok-kw{color:var(--syn-kw)}
+.tok-com{color:var(--syn-com);font-style:italic}
+.tabs{display:flex;flex-wrap:wrap;gap:2px 4px;border-bottom:1px solid var(--line)}
+.tab{padding:8px 10px;border:0;border-bottom:2px solid transparent;margin-bottom:-1px;background:none;color:var(--muted);font:500 12.5px var(--font-mono);cursor:pointer}
+.tab:hover{color:var(--ink)}
+.tab[aria-selected="true"]{color:var(--ink);border-bottom-color:var(--route)}
+.tabpanel{display:grid;gap:10px;padding-top:12px}
+.code-head{display:flex;justify-content:space-between;align-items:center;gap:12px;font:500 12px var(--font-mono);color:var(--muted)}
+.tabpanel p{font-size:15px;color:var(--muted)}
+.notes{margin:0;padding:0;list-style:none;display:grid;gap:12px}
+.notes li{display:grid;grid-template-columns:18px minmax(0,1fr);gap:10px;font-size:15px}
+.notes li::before{content:"";width:8px;height:8px;margin-top:9px;border-radius:2px;background:var(--route)}
+
+/* phases */
+.phases{display:grid;border-top:1px solid var(--line)}
+.ph-row{display:grid;grid-template-columns:minmax(0,1fr);gap:8px 24px;padding:16px 0;border-bottom:1px solid var(--line);align-items:center}
+@media (min-width:840px){.ph-row{grid-template-columns:minmax(0,1.3fr) minmax(0,1fr) 92px}}
+.ph-name{display:grid;gap:2px}
+.ph-name span{font-size:14.5px;color:var(--muted)}
+.ph-track{position:relative;height:14px;border-radius:4px;background:var(--surface-2);background-image:linear-gradient(to right,var(--line) 1px,transparent 1px);background-size:calc(100% / 3) 100%}
+.ph-min,.ph-max{position:absolute;top:0;bottom:0;left:calc(var(--from) / 3 * 100%);width:calc((var(--to) - var(--from)) / 3 * 100%)}
+.ph-min{background:var(--route);border-radius:4px 0 0 4px}
+.ph-max{background:repeating-linear-gradient(135deg,var(--route) 0 2px,transparent 2px 6px);border:1px solid var(--route);border-left:0;border-radius:0 4px 4px 0}
+.ph-min.full{border-radius:4px}
+.ph-val{font:500 14px var(--font-mono);font-variant-numeric:tabular-nums;white-space:nowrap}
+@media (min-width:840px){.ph-val{text-align:right}}
+.ph-axis{display:none}
+@media (min-width:840px){
+  .ph-axis{display:grid;grid-template-columns:minmax(0,1.3fr) minmax(0,1fr) 92px;gap:24px;padding-top:6px}
+  .ph-axis div{display:flex;justify-content:space-between;font:500 11.5px var(--font-mono);color:var(--muted)}
+}
+.ph-legend{display:flex;flex-wrap:wrap;gap:8px 22px;font-size:14px;color:var(--muted)}
+.ph-legend span{display:inline-flex;align-items:center;gap:8px}
+.ph-legend i{width:22px;height:10px;border-radius:3px}
+.ph-legend .lm{background:var(--route)}
+.ph-legend .lx{background:repeating-linear-gradient(135deg,var(--route) 0 2px,transparent 2px 6px);border:1px solid var(--route)}
+
+/* risks */
+.risks{list-style:none;margin:0;padding:0;border-top:1px solid var(--line)}
+.risks li{display:grid;grid-template-columns:92px minmax(0,1fr);gap:16px;padding:16px 0;border-bottom:1px solid var(--line)}
+.risks p{color:var(--muted);font-size:15px;margin-top:4px;max-width:78ch}
+.sev{align-self:start;justify-self:start;font:500 12.5px/1.5 var(--font-body);padding:3px 10px;border-radius:999px;white-space:nowrap}
+.sev.mid{background:var(--warn-soft);color:var(--warn)}
+.sev.low{background:var(--ok-soft);color:var(--ok)}
+.alts{display:grid;grid-template-columns:repeat(auto-fit,minmax(min(100%,250px),1fr));gap:20px 28px}
+.alts div{display:grid;gap:4px;align-content:start;padding-top:14px;border-top:2px solid var(--line)}
+.alts p{color:var(--muted);font-size:15px}
+.sources{margin:0;padding:0 0 0 18px;display:grid;gap:6px;font-size:15px}
+.sources li::marker{color:var(--muted)}
+footer{margin-top:64px;padding-top:20px;border-top:1px solid var(--line);font-size:13.5px;color:var(--muted)}
+
+@media (prefers-reduced-motion: reduce){
+  html{scroll-behavior:auto}
+  .phone *,.phone *::before,.phone *::after,.step-bar,.status.loading::before,.skel i,.demo-me::after{animation:none!important;transition:none!important}
+  .step-bar{display:none}
+}
+</style>
+
+<div class="wrap" lang="ru">
+  <header class="topbar">
+    <div class="brand">
+      <svg width="26" height="26" viewBox="0 0 24 24" aria-hidden="true"><path d="M12 2a7 7 0 0 0-7 7c0 5 7 13 7 13s7-8 7-13a7 7 0 0 0-7-7z" fill="var(--pin)"/><circle cx="12" cy="9" r="2.6" fill="var(--surface)"/></svg>
+      OhMyGuide
+    </div>
+    <nav class="toc" aria-label="Разделы страницы">
+      <a href="#scenario">Сценарий</a><a href="#stack">Стек</a><a href="#flow">Данные</a><a href="#demo">Демо</a><a href="#integrate">Встраивание</a><a href="#phases">Этапы</a><a href="#risks">Риски</a>
+    </nav>
+  </header>
+
+  <section class="hero" id="scenario" aria-labelledby="hero-title">
+    <div class="hero-intro">
+      <p class="eyebrow">Технический план · 12&nbsp;октября 2026 · r&nbsp;=&nbsp;5&nbsp;000&nbsp;м</p>
+      <h1 id="hero-title">Достопримечательности поблизости</h1>
+      <p class="lead">Новый раздел приложения: карта с вашим местоположением, места в радиусе 5 км, пешеходный маршрут до выбранного места и экскурсия по нему. Всё собирается из открытых бесплатных сервисов, без биллинга и платных ключей.</p>
+      <dl class="facts">
+        <div><dt>Стоимость</dt><dd>0 ₽ в месяц</dd></div>
+        <div><dt>Платные ключи</dt><dd>не нужны</dd></div>
+        <div><dt>Оценка</dt><dd>8–11 рабочих дней</dd></div>
+        <div><dt>Платформа</dt><dd>Android · Expo 54</dd></div>
+      </dl>
+    </div>
+
+    <div class="phone-col">
+      <div class="phone" id="phone" data-scene="1" aria-label="Анимированный макет раздела в приложении" role="img">
+        <div class="screen">
+          <svg class="map" viewBox="0 0 280 600" preserveAspectRatio="xMidYMid slice" aria-hidden="true">
+            <g class="map-zoom">
+              <rect class="m-land" x="-40" y="-40" width="360" height="680"/>
+              <rect class="m-block" x="68" y="238" width="50" height="46" rx="3"/>
+              <rect class="m-block" x="134" y="232" width="14" height="50" rx="3"/>
+              <rect class="m-block" x="162" y="230" width="46" height="24" rx="3"/>
+              <rect class="m-block" x="162" y="262" width="46" height="30" rx="3"/>
+              <rect class="m-block" x="70" y="160" width="40" height="12" rx="3"/>
+              <rect class="m-block" x="176" y="372" width="34" height="24" rx="3"/>
+              <path class="m-park" d="M70 180 L118 176 L120 214 L74 220 Z"/>
+              <path class="m-park" d="M134 306 L170 302 L172 330 L138 334 Z"/>
+              <path class="m-park" d="M60 376 L120 370 L128 418 L66 426 Z"/>
+              <rect class="m-park" x="18" y="520" width="80" height="58" rx="12"/>
+              <path class="m-water" d="M-30 352 C 40 322, 90 372, 140 342 S 240 300, 320 330"/>
+              <text class="m-water-label" x="196" y="320" transform="rotate(-9 196 320)">р. Москва</text>
+              <g>
+                <path class="m-edge" d="M-20 150 L300 176"/><path class="m-edge" d="M-20 440 L300 470"/><path class="m-edge" d="M40 -20 L64 620"/><path class="m-edge" d="M214 -20 L236 620"/><path class="m-edge" d="M122 -20 L130 620"/>
+                <path class="m-edge minor" d="M-20 320 L300 320"/><path class="m-edge minor" d="M150 -20 L158 620"/><path class="m-edge minor" d="M-20 230 L300 220"/><path class="m-edge minor" d="M-20 390 L300 404"/><path class="m-edge minor" d="M-20 40 L170 140"/>
+                <path class="m-road" d="M-20 150 L300 176"/><path class="m-road" d="M-20 440 L300 470"/><path class="m-road" d="M40 -20 L64 620"/><path class="m-road" d="M214 -20 L236 620"/><path class="m-road" d="M122 -20 L130 620"/>
+                <path class="m-road minor" d="M-20 320 L300 320"/><path class="m-road minor" d="M150 -20 L158 620"/><path class="m-road minor" d="M-20 230 L300 220"/><path class="m-road minor" d="M-20 390 L300 404"/><path class="m-road minor" d="M-20 40 L170 140"/>
+              </g>
+              <circle class="radius" cx="126" cy="300" r="118"/>
+              <g class="radius-label"><text x="126" y="186" text-anchor="middle">5 км</text></g>
+              <path class="route-casing" pathLength="100" d="M126 300 L126.3 320 L146 320"/>
+              <path class="route-line" pathLength="100" d="M126 300 L126.3 320 L146 320"/>
+              <g class="pin" transform="translate(108 289)" style="--i:0"><g class="counter"><g class="pin-drop"><path class="pin-body" d="M0 0 C -2 -6 -8 -9 -8 -15 A 8 8 0 1 1 8 -15 C 8 -9 2 -6 0 0 Z"/><circle class="pin-dot" cy="-15" r="3"/></g></g></g>
+              <g class="pin target" transform="translate(146 320)" style="--i:1"><g class="counter"><circle class="target-ring" r="9"/><g class="pin-drop"><path class="pin-body" d="M0 0 C -2 -6 -8 -9 -8 -15 A 8 8 0 1 1 8 -15 C 8 -9 2 -6 0 0 Z"/><circle class="pin-dot" cy="-15" r="3"/></g></g></g>
+              <g class="pin" transform="translate(150 274)" style="--i:2"><g class="counter"><g class="pin-drop"><path class="pin-body" d="M0 0 C -2 -6 -8 -9 -8 -15 A 8 8 0 1 1 8 -15 C 8 -9 2 -6 0 0 Z"/><circle class="pin-dot" cy="-15" r="3"/></g></g></g>
+              <g class="pin" transform="translate(90 322)" style="--i:3"><g class="counter"><g class="pin-drop"><path class="pin-body" d="M0 0 C -2 -6 -8 -9 -8 -15 A 8 8 0 1 1 8 -15 C 8 -9 2 -6 0 0 Z"/><circle class="pin-dot" cy="-15" r="3"/></g></g></g>
+              <g class="pin" transform="translate(140 252)" style="--i:4"><g class="counter"><g class="pin-drop"><path class="pin-body" d="M0 0 C -2 -6 -8 -9 -8 -15 A 8 8 0 1 1 8 -15 C 8 -9 2 -6 0 0 Z"/><circle class="pin-dot" cy="-15" r="3"/></g></g></g>
+              <g class="pin" transform="translate(170 335)" style="--i:5"><g class="counter"><g class="pin-drop"><path class="pin-body" d="M0 0 C -2 -6 -8 -9 -8 -15 A 8 8 0 1 1 8 -15 C 8 -9 2 -6 0 0 Z"/><circle class="pin-dot" cy="-15" r="3"/></g></g></g>
+              <g class="pin" transform="translate(175 250)" style="--i:6"><g class="counter"><g class="pin-drop"><path class="pin-body" d="M0 0 C -2 -6 -8 -9 -8 -15 A 8 8 0 1 1 8 -15 C 8 -9 2 -6 0 0 Z"/><circle class="pin-dot" cy="-15" r="3"/></g></g></g>
+              <g class="pin" transform="translate(92 385)" style="--i:7"><g class="counter"><g class="pin-drop"><path class="pin-body" d="M0 0 C -2 -6 -8 -9 -8 -15 A 8 8 0 1 1 8 -15 C 8 -9 2 -6 0 0 Z"/><circle class="pin-dot" cy="-15" r="3"/></g></g></g>
+              <g class="pin" transform="translate(36 360)" style="--i:8"><g class="counter"><g class="pin-drop"><path class="pin-body" d="M0 0 C -2 -6 -8 -9 -8 -15 A 8 8 0 1 1 8 -15 C 8 -9 2 -6 0 0 Z"/><circle class="pin-dot" cy="-15" r="3"/></g></g></g>
+              <g class="me" transform="translate(126 300)"><g class="counter"><circle class="me-pulse" r="7"/><circle class="me-halo" r="12"/><circle class="me-dot" r="6"/></g></g>
+            </g>
+          </svg>
+
+          <div class="statusbar" aria-hidden="true">
+            <span>12:40</span>
+            <span class="ico">
+              <svg width="14" height="10" viewBox="0 0 14 10"><rect x="0" y="7" width="2.4" height="3" rx=".6"/><rect x="3.8" y="5" width="2.4" height="5" rx=".6"/><rect x="7.6" y="2.6" width="2.4" height="7.4" rx=".6"/><rect x="11.4" y="0" width="2.4" height="10" rx=".6"/></svg>
+              <svg width="20" height="10" viewBox="0 0 20 10"><rect x=".5" y=".5" width="16" height="9" rx="2.2" fill="none" stroke="currentColor"/><rect x="2" y="2" width="11" height="6" rx="1.2"/><rect x="17.6" y="3.2" width="1.8" height="3.6" rx=".8"/></svg>
+            </span>
+          </div>
+
+          <div class="search-chip" aria-hidden="true">
+            <svg width="14" height="14" viewBox="0 0 24 24"><circle cx="11" cy="11" r="7"/><path d="M20 20l-4-4"/></svg>
+            Рядом со мной
+            <span class="km">5 км</span>
+          </div>
+
+          <div class="ov scrim" aria-hidden="true"></div>
+          <div class="ov perm" aria-hidden="true">
+            <span class="perm-icon"><svg width="16" height="16" viewBox="0 0 24 24"><path d="M12 2a7 7 0 0 0-7 7c0 5 7 13 7 13s7-8 7-13a7 7 0 0 0-7-7zm0 9.6A2.6 2.6 0 1 1 12 6.4a2.6 2.6 0 0 1 0 5.2z"/></svg></span>
+            <p>Разрешить приложению OhMyGuide доступ к местоположению устройства?</p>
+            <div class="perm-opts">
+              <span class="perm-opt primary">При использовании приложения</span>
+              <span class="perm-opt">Только в этот раз</span>
+              <span class="perm-opt">Не разрешать</span>
+            </div>
+          </div>
+          <div class="ov toast" aria-hidden="true"><i></i>Вы здесь · точность ±8 м</div>
+
+          <div class="ov sheet" aria-hidden="true">
+            <span class="handle"></span>
+            <div class="sheet-head"><b>Рядом с вами</b><span>36 мест · 5 км</span></div>
+            <div class="chips"><span class="chip on">Все</span><span class="chip">Музеи</span><span class="chip">Храмы</span><span class="chip">Парки</span></div>
+            <ul class="plist">
+              <li style="--i:0"><span class="thumb"><svg width="18" height="18" viewBox="0 0 16 16"><path d="M2 15V7l2-2 2 2V4h1V2h2v2h1v3l2-2 2 2v8H9v-3H7v3z"/></svg></span><span><span class="pname">Московский Кремль</span><span class="pkind">Крепость</span></span><span class="pdist">0,9 км<small>11 мин</small></span></li>
+              <li style="--i:1"><span class="thumb"><svg width="18" height="18" viewBox="0 0 16 16"><circle cx="8" cy="6" r="4.5"/><rect x="7.2" y="9" width="1.6" height="6" rx=".8"/></svg></span><span><span class="pname">Парк «Зарядье»</span><span class="pkind">Парк</span></span><span class="pdist">1,2 км<small>15 мин</small></span></li>
+              <li style="--i:2"><span class="thumb"><svg width="18" height="18" viewBox="0 0 16 16"><path d="M8 1.5c-1.8 2-4 3.6-4 6h8c0-2.4-2.2-4-4-6zM4 8.5h8V15H4z"/></svg></span><span><span class="pname">Храм Василия Блаженного</span><span class="pkind">Собор</span></span><span class="pdist">1,5 км<small>19 мин</small></span></li>
+              <li style="--i:3"><span class="thumb"><svg width="18" height="18" viewBox="0 0 16 16"><path d="M1.5 6L8 2l6.5 4zM2.5 7h2v6h-2zm4.5 0h2v6H7zm4.5 0h2v6h-2zM1.5 14h13v1.2h-13z"/></svg></span><span><span class="pname">ГМИИ им. Пушкина</span><span class="pkind">Музей</span></span><span class="pdist">1,8 км<small>23 мин</small></span></li>
+            </ul>
+          </div>
+
+          <div class="ov route-card" aria-hidden="true">
+            <span class="to">Пешком до парка «Зарядье»</span>
+            <span class="eta">21 мин <small>· 1,7 км</small></span>
+          </div>
+          <div class="ov route-sheet" aria-hidden="true">
+            <div><b>Парк «Зарядье»</b><div class="pkind">Парк · ул. Варварка, 6</div></div>
+            <div class="btn-row"><span class="pbtn primary">Идти</span><span class="pbtn">Экскурсия</span></div>
+          </div>
+
+          <div class="ov tour" aria-hidden="true">
+            <span class="handle"></span>
+            <div class="tour-art">
+              <svg viewBox="0 0 260 92" aria-hidden="true">
+                <rect width="260" height="92" fill="var(--route-soft)"/>
+                <path d="M150 50 V30 l6-8 6 8 V50 M172 50 V26 l7-10 7 10 V50 M196 50 V32 l5-7 5 7 V50 M140 50 H230" fill="var(--line)" stroke="var(--line)" stroke-width="2"/>
+                <rect y="58" width="260" height="34" fill="var(--map-water)"/>
+                <path d="M0 92 V48 C 30 40, 60 44, 92 56 L 92 92 Z" fill="var(--map-park)"/>
+                <circle cx="26" cy="44" r="9" fill="var(--map-park)" stroke="var(--ok)" stroke-width="1.2"/>
+                <circle cx="48" cy="42" r="11" fill="var(--map-park)" stroke="var(--ok)" stroke-width="1.2"/>
+                <circle cx="70" cy="48" r="8" fill="var(--map-park)" stroke="var(--ok)" stroke-width="1.2"/>
+                <path d="M78 56 L150 56 L176 66" fill="none" stroke="var(--ink)" stroke-width="3" stroke-linecap="round" stroke-linejoin="round"/>
+                <path d="M78 50 L150 50 L176 60" fill="none" stroke="var(--ink)" stroke-width="1.2" stroke-linecap="round" opacity=".6"/>
+              </svg>
+            </div>
+            <div class="tour-title"><b>Парк «Зарядье»</b><svg width="18" height="18" viewBox="0 0 24 24"><path d="M6 3h12v18l-6-4-6 4z"/></svg></div>
+            <div class="tour-meta">Экскурсия · около 6 минут · с опорой на Википедию</div>
+            <p class="tour-text"><span id="tour-text"></span><span class="caret"></span></p>
+            <div class="player">
+              <span class="play"><svg width="14" height="14" viewBox="0 0 24 24"><rect x="6" y="5" width="4" height="14" rx="1"/><rect x="14" y="5" width="4" height="14" rx="1"/></svg></span>
+              <div><div class="wave" id="wave"></div><div class="player-meta"><span>0:42</span><span>expo-speech · ru-RU</span><span>6:10</span></div></div>
+            </div>
+          </div>
+        </div>
+      </div>
+      <div class="phone-ctrl">
+        <span id="scene-caption" aria-live="polite">Сцена 1 из 4 · Геолокация</span>
+        <button class="btn pill small" id="scene-toggle" type="button" aria-pressed="false">Пауза</button>
+      </div>
+    </div>
+
+    <ol class="steps" aria-label="Сценарий раздела">
+      <li class="step is-active">
+        <h3><button class="step-btn" type="button" aria-current="step">Определяем, где вы</button></h3>
+        <p>При первом входе expo-location спрашивает разрешение «при использовании приложения» и возвращает координаты с точностью 5–20 м. Город и адрес даёт <code>reverseGeocodeAsync</code> прямо на устройстве.</p>
+        <div class="tags"><span class="tag">expo-location</span></div>
+        <span class="step-bar"></span>
+      </li>
+      <li class="step">
+        <h3><button class="step-btn" type="button">Находим места в радиусе 5 км</button></h3>
+        <p>Сразу показываем ближайшие статьи Википедии, следом приходят самые известные объекты в 5 км из Wikidata. Дубли сливаем, улицы и станции метро отсекаем, сортируем по расстоянию.</p>
+        <div class="tags"><span class="tag">Wikipedia GeoSearch</span><span class="tag">Wikidata</span><span class="tag">OpenFreeMap</span></div>
+        <span class="step-bar"></span>
+      </li>
+      <li class="step">
+        <h3><button class="step-btn" type="button">Ведём пешком</button></h3>
+        <p>OSRM с пешеходным профилем возвращает линию маршрута, длину и время. Рисуем её на карте и ведём по GPS. Для длинных маршрутов есть кнопка «Открыть в навигаторе».</p>
+        <div class="tags"><span class="tag">OSRM foot</span><span class="tag">MapLibre</span></div>
+        <span class="step-bar"></span>
+      </li>
+      <li class="step">
+        <h3><button class="step-btn" type="button">Рассказываем о месте</button></h3>
+        <p>Текущий генератор на Groq получает название, адрес, координаты и справку из Википедии. Текст читает существующий плеер expo-speech, экскурсию можно сохранить.</p>
+        <div class="tags"><span class="tag">Groq</span><span class="tag">expo-speech</span></div>
+        <span class="step-bar"></span>
+      </li>
+    </ol>
+  </section>
+
+  <section class="section" id="stack" aria-labelledby="stack-title">
+    <div class="section-head">
+      <p class="eyebrow">Из чего собираем</p>
+      <h2 id="stack-title">Бесплатный стек</h2>
+      <p class="lead">Карта и данные берутся из открытых проектов OpenStreetMap, Википедии и Wikidata. Тарифов у них нет, взамен они просят атрибуцию и бережную нагрузку. Генерация и озвучка уже работают в приложении.</p>
+    </div>
+    <div class="stack" role="table" aria-label="Компоненты и их условия">
+      <div class="srow head" role="row"><span role="columnheader">Задача</span><span role="columnheader">Решение</span><span role="columnheader">Лимиты</span><span role="columnheader">Условия</span></div>
+      <div class="srow" role="row">
+        <span class="task" role="cell">Карта</span>
+        <div class="sol" role="cell"><h3>MapLibre React Native 11 + тайлы OpenFreeMap</h3><p>Векторная карта со стилями liberty и positron и тёмным dark под тему приложения. Пакет требует Expo 54+ и RN 0.80+, у нас Expo 54 и RN 0.81.</p></div>
+        <p class="limits" role="cell">Без регистрации и без ограничений на просмотры и запросы.</p>
+        <div class="badges" role="cell"><span class="badge free">без ключа</span></div>
+      </div>
+      <div class="srow" role="row">
+        <span class="task" role="cell">Где я</span>
+        <div class="sol" role="cell"><h3>expo-location</h3><p>Разрешение «при использовании», текущая позиция, слежение для ведения по маршруту, компас и обратное геокодирование в адрес.</p></div>
+        <p class="limits" role="cell">Работает на устройстве, внешних запросов нет.</p>
+        <div class="badges" role="cell"><span class="badge free">без ключа</span></div>
+      </div>
+      <div class="srow" role="row">
+        <span class="task" role="cell">Места: значимые</span>
+        <div class="sol" role="cell"><h3>Wikidata Query Service (SPARQL)</h3><p>Объекты с координатами в 5 км: здания, музеи, парки, памятники, площади. Ранжируем по числу языковых разделов Википедии со статьёй об объекте. В центре Москвы в первой тройке Красная площадь, Кремль и храм Василия Блаженного.</p></div>
+        <p class="limits" role="cell">Первый запрос по району занимает 8–20 с, повторный отдаётся из кэша за доли секунды.</p>
+        <div class="badges" role="cell"><span class="badge free">без ключа</span></div>
+      </div>
+      <div class="srow" role="row">
+        <span class="task" role="cell">Места: рядом</span>
+        <div class="sol" role="cell"><h3>Wikipedia API: GeoSearch, extracts, pageimages</h3><p>Мгновенный список ближайших статей, вводный абзац и фото для карточки места и для экскурсии.</p></div>
+        <p class="limits" role="cell">До 500 ближайших статей; в центре Москвы они укладываются в 0,9 км, поэтому 5 км закрывает Wikidata.</p>
+        <div class="badges" role="cell"><span class="badge free">без ключа</span></div>
+      </div>
+      <div class="srow" role="row">
+        <span class="task" role="cell">Места: OSM</span>
+        <div class="sol" role="cell"><h3>Overpass API</h3><p>Небольшие музеи, смотровые площадки и арт-объекты, у которых нет статьи в Википедии.</p></div>
+        <p class="limits" role="cell">При проверке 12.10.2026 публичные серверы ответили 406 и 504. Подключаем только с кэшем или собственным сервером.</p>
+        <div class="badges" role="cell"><span class="badge opt">по желанию</span></div>
+      </div>
+      <div class="srow" role="row">
+        <span class="task" role="cell">Маршрут</span>
+        <div class="sol" role="cell"><h3>OSRM FOSSGIS, профиль foot</h3><p>Линия маршрута, длина и время в пути. Резерв — OpenRouteService foot-walking, последний вариант — внешний навигатор.</p></div>
+        <p class="limits" role="cell">OSRM: разумная нагрузка, User-Agent и атрибуция. ORS: 2000 маршрутов в сутки, 40 в минуту.</p>
+        <div class="badges" role="cell"><span class="badge free">без ключа</span><span class="badge key">ORS: бесплатный ключ</span></div>
+      </div>
+      <div class="srow" role="row">
+        <span class="task" role="cell">Экскурсия</span>
+        <div class="sol" role="cell"><h3>Groq через текущий <code>generateTourApi</code></h3><p>Добавляем в запрос адрес, координаты и справку из Википедии, чтобы модель рассказывала именно об этом месте и меньше выдумывала.</p></div>
+        <p class="limits" role="cell">Бесплатный тариф Groq, ключ пользователь уже вводит в настройках.</p>
+        <div class="badges" role="cell"><span class="badge have">уже в приложении</span></div>
+      </div>
+      <div class="srow" role="row">
+        <span class="task" role="cell">Озвучка</span>
+        <div class="sol" role="cell"><h3>expo-speech и текущий плеер</h3><p>Подсветка слов, перемотка, скорость и выбор голоса уже есть.</p></div>
+        <p class="limits" role="cell">На устройстве, работает офлайн.</p>
+        <div class="badges" role="cell"><span class="badge have">уже в приложении</span></div>
+      </div>
+    </div>
+    <div class="total">
+      <strong>0 ₽ в месяц</strong>
+      <p>Новых обязательных ключей нет. Бесплатный ключ OpenRouteService нужен только для резервного маршрутизатора.</p>
+    </div>
+  </section>
+
+  <section class="section" id="flow" aria-labelledby="flow-title">
+    <div class="section-head">
+      <p class="eyebrow">Без своего сервера</p>
+      <h2 id="flow-title">Как идут данные</h2>
+      <p class="lead">Телефон сам обращается к открытым API, свой бэкенд для старта не нужен. Синие блоки придётся сделать, зелёные уже работают в OhMyGuide.</p>
+    </div>
+    <div class="diagram">
+      <svg id="flow-svg" viewBox="0 0 1040 390" role="img" aria-labelledby="fd-title fd-desc">
+        <title id="fd-title">Поток данных раздела «Рядом»</title>
+        <desc id="fd-desc">Телефон передаёт координаты в Википедию и Wikidata, результаты сливаются в список мест на карте. Выбранное место уходит в OSRM за пешеходным маршрутом и в Groq за экскурсией, текст озвучивает expo-speech, экскурсия сохраняется.</desc>
+        <defs><marker id="fd-arr" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="7" markerHeight="7" orient="auto-start-reverse"><path class="fd-arrow" d="M0 0 L10 5 L0 10 z"/></marker></defs>
+        <path id="e1" class="fd-edge" marker-end="url(#fd-arr)" d="M190 102 C 222 102, 218 55, 250 55"/>
+        <path id="e2" class="fd-edge" marker-end="url(#fd-arr)" d="M190 102 C 222 102, 218 149, 250 149"/>
+        <path id="e3" class="fd-edge" marker-end="url(#fd-arr)" d="M460 55 C 492 55, 488 102, 520 102"/>
+        <path id="e4" class="fd-edge" marker-end="url(#fd-arr)" d="M460 149 C 492 149, 488 102, 520 102"/>
+        <path id="e5" class="fd-edge" marker-end="url(#fd-arr)" d="M740 102 L800 102"/>
+        <path id="e6" class="fd-edge" marker-end="url(#fd-arr)" d="M910 144 L910 230"/>
+        <path id="e7" class="fd-edge" marker-end="url(#fd-arr)" d="M800 265 C 768 265, 772 225, 740 225"/>
+        <path id="e8" class="fd-edge" marker-end="url(#fd-arr)" d="M800 265 C 768 265, 772 335, 740 335"/>
+        <path id="e9" class="fd-edge" marker-end="url(#fd-arr)" d="M520 225 L460 225"/>
+        <path id="e10" class="fd-edge" marker-end="url(#fd-arr)" d="M520 335 L460 335"/>
+        <path id="e11" class="fd-edge" marker-end="url(#fd-arr)" d="M250 335 L190 335"/>
+        <g id="fd-packets"></g>
+        <g class="fd-node new"><rect x="20" y="60" width="170" height="84" rx="10"/><text class="fd-t" x="36" y="88">Телефон</text><text class="fd-s" x="36" y="110">expo-location</text><text class="fd-m" x="36" y="130">55.752, 37.618</text></g>
+        <g class="fd-node new"><rect x="250" y="20" width="210" height="70" rx="10"/><text class="fd-t" x="266" y="48">Википедия</text><text class="fd-s" x="266" y="70">GeoSearch: ближайшие, &lt; 1 с</text></g>
+        <g class="fd-node new"><rect x="250" y="114" width="210" height="70" rx="10"/><text class="fd-t" x="266" y="142">Wikidata</text><text class="fd-s" x="266" y="164">SPARQL: значимые в 5 км</text></g>
+        <g class="fd-node new"><rect x="520" y="60" width="220" height="84" rx="10"/><text class="fd-t" x="536" y="88">Список мест</text><text class="fd-s" x="536" y="110">слияние дублей, ≤ 5 км</text><text class="fd-m" x="536" y="130">сортировка по расстоянию</text></g>
+        <g class="fd-node new"><rect x="800" y="60" width="220" height="84" rx="10"/><text class="fd-t" x="816" y="88">Карта и шторка</text><text class="fd-s" x="816" y="110">MapLibre + OpenFreeMap</text><text class="fd-m" x="816" y="130">пины, круг 5 км</text></g>
+        <g class="fd-node new"><rect x="800" y="230" width="220" height="70" rx="10"/><text class="fd-t" x="816" y="258">Выбранное место</text><text class="fd-s" x="816" y="280">координаты и справка</text></g>
+        <g class="fd-node new"><rect x="520" y="190" width="220" height="70" rx="10"/><text class="fd-t" x="536" y="218">Пешеходный маршрут</text><text class="fd-s" x="536" y="240">OSRM foot, резерв ORS</text></g>
+        <g class="fd-node new"><rect x="250" y="190" width="210" height="70" rx="10"/><text class="fd-t" x="266" y="218">Линия на карте</text><text class="fd-s" x="266" y="240">км, минуты, ведение по GPS</text></g>
+        <g class="fd-node have"><rect x="520" y="300" width="220" height="70" rx="10"/><text class="fd-t" x="536" y="328">Экскурсия</text><text class="fd-s" x="536" y="350">Groq + контекст места</text></g>
+        <g class="fd-node have"><rect x="250" y="300" width="210" height="70" rx="10"/><text class="fd-t" x="266" y="328">Озвучка</text><text class="fd-s" x="266" y="350">expo-speech, текущий плеер</text></g>
+        <g class="fd-node have"><rect x="20" y="300" width="170" height="70" rx="10"/><text class="fd-t" x="36" y="328">Сохранённые</text><text class="fd-s" x="36" y="350">Tour + координаты</text></g>
+        <text class="fd-label" x="770" y="92" text-anchor="middle">GeoJSON</text>
+        <text class="fd-label" x="920" y="192">тап по пину</text>
+        <text class="fd-label" x="782" y="214" text-anchor="middle">A → B</text>
+        <text class="fd-label" x="772" y="354" text-anchor="middle">контекст</text>
+        <text class="fd-label" x="490" y="325" text-anchor="middle">текст</text>
+        <text class="fd-label" x="206" y="172" text-anchor="middle">lat, lon</text>
+      </svg>
+    </div>
+    <div class="legend">
+      <span><i class="l-new"></i>Новое в приложении</span>
+      <span><i class="l-have"></i>Уже работает, дорабатываем</span>
+      <span class="scroll-hint">Схему можно листать вбок</span>
+    </div>
+  </section>
+
+  <section class="section" id="demo" aria-labelledby="demo-title">
+    <div class="section-head">
+      <p class="eyebrow">На настоящих данных</p>
+      <h2 id="demo-title">Живое демо</h2>
+      <p class="lead">Те же бесплатные сервисы, что пойдут в приложение, вызываются прямо из браузера: карта OpenFreeMap, места из Википедии и Wikidata в радиусе 5 км, пешеходный маршрут OSRM. Выберите место в списке или на карте, постройте маршрут и соберите запрос для экскурсии. Клик по пустому месту карты переносит точку «Вы здесь».</p>
+    </div>
+    <div class="demo-bar" role="group" aria-label="Откуда искать">
+      <button class="btn" id="demo-locate" type="button"><svg width="16" height="16" viewBox="0 0 24 24" aria-hidden="true"><path d="M12 8a4 4 0 1 0 0 8 4 4 0 0 0 0-8zm8.9 3A9 9 0 0 0 13 3.1V1h-2v2.1A9 9 0 0 0 3.1 11H1v2h2.1a9 9 0 0 0 7.9 7.9V23h2v-2.1a9 9 0 0 0 7.9-7.9H23v-2h-2.1zM12 19a7 7 0 1 1 0-14 7 7 0 0 1 0 14z"/></svg>Моё местоположение</button>
+      <span class="sep" aria-hidden="true"></span>
+      <button class="btn" type="button" data-preset="moscow" aria-pressed="true">Москва</button>
+      <button class="btn" type="button" data-preset="spb" aria-pressed="false">Санкт-Петербург</button>
+      <button class="btn" type="button" data-preset="kazan" aria-pressed="false">Казань</button>
+    </div>
+    <p class="status" id="demo-status" role="status" aria-live="polite">Загружаю демо…</p>
+    <div class="notice" id="demo-blocked" hidden>
+      <b>Внешние запросы недоступны</b>
+      <span>Демо обращается к OpenFreeMap, Википедии, Wikidata и OSRM напрямую. На claude.ai такие запросы блокируются политикой безопасности страницы. Откройте файл <code>docs/nearby-attractions-plan.html</code> в браузере, а если он уже открыт локально, проверьте подключение к интернету.</span>
+    </div>
+    <div class="demo">
+      <div class="map-box">
+        <div id="demo-map"></div>
+        <div class="map-hint" id="demo-hint">Масштаб: колесо мыши с Ctrl</div>
+        <div class="zoom-ctrl"><button type="button" id="zoom-in" aria-label="Приблизить">+</button><button type="button" id="zoom-out" aria-label="Отдалить">−</button></div>
+        <div class="map-fallback" id="demo-map-fallback" hidden><p>Карта не загрузилась. Список мест, маршрут и запрос для экскурсии работают и без неё.</p></div>
+      </div>
+      <div class="panel">
+        <div class="panel-head">
+          <h3 id="demo-count">Места рядом</h3>
+          <div class="sort" role="group" aria-label="Сортировка">
+            <button class="btn pill small" type="button" data-sort="distance" aria-pressed="true">Ближе</button>
+            <button class="btn pill small" type="button" data-sort="fame" aria-pressed="false">Известнее</button>
+          </div>
+          <span class="src" id="demo-src">Источник: Википедия и Wikidata</span>
+        </div>
+        <ul class="dlist" id="demo-list" aria-labelledby="demo-count"></ul>
+      </div>
+    </div>
+    <div class="details" id="demo-details">
+      <p class="details-empty">Выберите место в списке или на карте, чтобы построить пешеходный маршрут и собрать запрос для экскурсии.</p>
+    </div>
+  </section>
+
+  <section class="section" id="integrate" aria-labelledby="integrate-title">
+    <div class="section-head">
+      <p class="eyebrow">Expo 54 · expo-router · Effector · FSD</p>
+      <h2 id="integrate-title">Как встроить в OhMyGuide</h2>
+      <p class="lead">Раздел ложится в текущую структуру: новая вкладка в <code>app/(tabs)</code>, API-модули в <code>src/shared/api</code>, модели в <code>features</code>. Новые зависимости — <code>@maplibre/maplibre-react-native</code> и <code>expo-location</code>. Из-за нативного модуля карты раздел не запустится в Expo Go, нужна сборка через prebuild, как сейчас и делается APK.</p>
+    </div>
+    <div class="integrate">
+      <div class="col">
+        <div class="code-head"><span>структура · <span style="color:var(--route)">новое</span> · <span style="color:var(--warn)">меняется</span></span></div>
+<pre class="code tree">app/
+├─ (tabs)/
+│  ├─ <span class="t-mod">_layout.tsx</span>             <span class="c">+ Tabs.Screen «Рядом»</span>
+│  └─ <span class="t-new">nearby.tsx</span>              <span class="c">вкладка</span>
+├─ <span class="t-new">place/[id].tsx</span>             <span class="c">карточка места</span>
+└─ <span class="t-mod">_layout.tsx</span>                <span class="c">+ Stack.Screen</span>
+src/
+├─ shared/
+│  ├─ api/
+│  │  ├─ <span class="t-new">public-client.ts</span>     <span class="c">GET без ключа</span>
+│  │  ├─ <span class="t-new">wikidata-sights-api.ts</span>
+│  │  ├─ <span class="t-new">wiki-geosearch-api.ts</span>
+│  │  ├─ <span class="t-new">wiki-extract-api.ts</span>
+│  │  ├─ <span class="t-new">walking-route-api.ts</span>
+│  │  └─ <span class="t-mod">generate-tour-api.ts</span> <span class="c">+ контекст</span>
+│  └─ lib/<span class="t-new">geo.ts</span>              <span class="c">расстояния, сетка</span>
+├─ entities/
+│  ├─ <span class="t-new">place/</span>                  <span class="c">тип Place, слияние</span>
+│  └─ <span class="t-mod">tour/</span>                   <span class="c">+ location, placeId</span>
+├─ features/
+│  ├─ <span class="t-new">user-location/</span>          <span class="c">разрешение, позиция</span>
+│  ├─ <span class="t-new">nearby-places/</span>          <span class="c">загрузка, кэш</span>
+│  ├─ <span class="t-new">walking-route/</span>          <span class="c">маршрут, ведение</span>
+│  └─ <span class="t-mod">generate-tour/</span>          <span class="c">запуск с местом</span>
+└─ widgets/
+   ├─ <span class="t-new">nearby-map/</span>             <span class="c">пины, круг, линия</span>
+   └─ <span class="t-new">nearby-list/</span>            <span class="c">шторка</span></pre>
+        <ul class="notes">
+          <li><span><code>apiClient</code> всегда отправляет <code>Authorization: Bearer</code> и JSON-тело. Публичным API нужен отдельный <code>publicGet</code> с User-Agent приложения: этого требуют правила Википедии, Wikidata и OSRM.</span></li>
+          <li><span>Центр запроса к Wikidata округляем до сетки 0,02° (около 2 км) и берём радиус 6 км. Соседи отправляют одинаковый запрос и получают ответ из кэша сервиса, а точный отбор по 5 км делаем на телефоне.</span></li>
+          <li><span><code>generateModel</code> и <code>speechModel</code> глобальные, <code>tour-viewer</code> привязан к <code>generateModel</code>. Для первой версии передаём место в <code>generateModel</code> и открываем экран генерации, вынос в фабрику — позже.</span></li>
+          <li><span>В <code>Tour</code> добавляем необязательные <code>location</code> и <code>placeId</code>, старые сохранённые экскурсии читаются без изменений.</span></li>
+        </ul>
+      </div>
+      <div class="col" data-tabs>
+        <div class="tabs" role="tablist" aria-label="Фрагменты кода">
+          <button class="tab" role="tab" type="button" id="tab-config" aria-controls="panel-config" aria-selected="true">app.config.ts</button>
+          <button class="tab" role="tab" type="button" id="tab-public" aria-controls="panel-public" aria-selected="false" tabindex="-1">public-client.ts</button>
+          <button class="tab" role="tab" type="button" id="tab-sights" aria-controls="panel-sights" aria-selected="false" tabindex="-1">wikidata-sights-api.ts</button>
+          <button class="tab" role="tab" type="button" id="tab-route" aria-controls="panel-route" aria-selected="false" tabindex="-1">walking-route-api.ts</button>
+          <button class="tab" role="tab" type="button" id="tab-map" aria-controls="panel-map" aria-selected="false" tabindex="-1">nearby-map.tsx</button>
+          <button class="tab" role="tab" type="button" id="tab-prompt" aria-controls="panel-prompt" aria-selected="false" tabindex="-1">generate-tour-api.ts</button>
+        </div>
+        <div class="tabpanel" role="tabpanel" id="panel-config" aria-labelledby="tab-config">
+          <div class="code-head"><span>app.config.ts · plugins</span><button class="btn small" type="button" data-copy="code-config">Копировать</button></div>
+<pre class="code" id="code-config" data-lang="ts">plugins: [
+  'expo-router',
+  '@maplibre/maplibre-react-native',
+  [
+    'expo-location',
+    {
+      locationWhenInUsePermission:
+        'OhMyGuide показывает достопримечательности рядом с вами и строит пешеходный маршрут',
+    },
+  ],
+],</pre>
+          <p>После этого <code>npx expo prebuild --clean</code>: <code>scripts/build-apk.js</code> запускает prebuild, только если папки <code>android/</code> нет, и без очистки соберёт APK без новых модулей.</p>
+        </div>
+        <div class="tabpanel" role="tabpanel" id="panel-public" aria-labelledby="tab-public" hidden>
+          <div class="code-head"><span>src/shared/api/public-client.ts</span><button class="btn small" type="button" data-copy="code-public">Копировать</button></div>
+<pre class="code" id="code-public" data-lang="ts">import { API_TIMEOUT_MS, APP_VERSION, SUPPORT_EMAIL } from '@app/shared/config';
+import type { ApiError } from './api-client';
+
+const APP_USER_AGENT = `OhMyGuide/${APP_VERSION} (${SUPPORT_EMAIL})`;
+
+type PublicRequest = {
+  url: string;
+  headers?: Record&lt;string, string&gt;;
+  timeout?: number;
+};
+
+export const publicGet = async &lt;T&gt;({
+  url,
+  headers = {},
+  timeout = API_TIMEOUT_MS,
+}: PublicRequest): Promise&lt;T&gt; =&gt; {
+  const controller = new AbortController();
+  const timeoutId = setTimeout(() =&gt; controller.abort(), timeout);
+
+  try {
+    const response = await fetch(url, {
+      headers: { 'User-Agent': APP_USER_AGENT, ...headers },
+      signal: controller.signal,
+    });
+
+    if (!response.ok) {
+      throw { message: `Ошибка сервера: ${response.status}`, status: response.status } satisfies ApiError;
+    }
+
+    return (await response.json()) as T;
+  } finally {
+    clearTimeout(timeoutId);
+  }
+};</pre>
+        </div>
+        <div class="tabpanel" role="tabpanel" id="panel-sights" aria-labelledby="tab-sights" hidden>
+          <div class="code-head"><span>src/shared/api/wikidata-sights-api.ts</span><button class="btn small" type="button" data-copy="code-sights">Копировать</button></div>
+<pre class="code" id="code-sights" data-lang="ts">import type { GeoPoint } from '@app/shared/lib/geo';
+import { publicGet } from './public-client';
+
+const WDQS_URL = 'https://query.wikidata.org/sparql';
+const GRID_STEP = 0.02;
+
+// Одинаковый центр у соседей — ответ приходит из кэша WDQS
+const snapToGrid = (value: number): string =&gt; (Math.round(value / GRID_STEP) * GRID_STEP).toFixed(2);
+
+const buildSightsQuery = ({ lat, lon }: GeoPoint): string =&gt; `
+SELECT ?item ?itemLabel ?itemDescription ?lat ?lon ?title ?sitelinks ?image WHERE {
+  SERVICE wikibase:around {
+    ?item wdt:P625 ?coord .
+    bd:serviceParam wikibase:center "Point(${snapToGrid(lon)} ${snapToGrid(lat)})"^^geo:wktLiteral .
+    bd:serviceParam wikibase:radius "6" .
+  }
+  ?item wikibase:sitelinks ?sitelinks .
+  FILTER(?sitelinks &gt;= 8)
+  ?article schema:about ?item ; schema:isPartOf &lt;https://ru.wikipedia.org/&gt; ; schema:name ?title .
+  FILTER EXISTS { ?item wdt:P31/wdt:P279* ?class .
+    VALUES ?class { wd:Q811979 wd:Q33506 wd:Q22698 wd:Q4989906 wd:Q174782 wd:Q570116 wd:Q839954 } }
+  MINUS { ?item wdt:P31 ?type . VALUES ?type { wd:Q928830 wd:Q79007 } }
+  OPTIONAL { ?item wdt:P18 ?image }
+  BIND(geof:latitude(?coord) AS ?lat)
+  BIND(geof:longitude(?coord) AS ?lon)
+  SERVICE wikibase:label { bd:serviceParam wikibase:language "ru". }
+}
+ORDER BY DESC(?sitelinks)
+LIMIT 60`;
+
+export const fetchSightsApi = (position: GeoPoint): Promise&lt;SparqlResponse&gt; =&gt;
+  publicGet&lt;SparqlResponse&gt;({
+    url: `${WDQS_URL}?format=json&amp;query=${encodeURIComponent(buildSightsQuery(position))}`,
+    timeout: 45_000,
+  });</pre>
+          <p>Классы: архитектурное сооружение, музей, парк, памятник, площадь, туристическая достопримечательность, археологический объект. Станции метро и улицы исключены. Результат кэшируем в AsyncStorage по ячейке сетки на 30 дней.</p>
+        </div>
+        <div class="tabpanel" role="tabpanel" id="panel-route" aria-labelledby="tab-route" hidden>
+          <div class="code-head"><span>src/shared/api/walking-route-api.ts</span><button class="btn small" type="button" data-copy="code-route">Копировать</button></div>
+<pre class="code" id="code-route" data-lang="ts">import type { GeoPoint } from '@app/shared/lib/geo';
+import { publicGet } from './public-client';
+
+const OSRM_FOOT_URL = 'https://routing.openstreetmap.de/routed-foot/route/v1/foot';
+
+export type WalkingRoute = {
+  line: GeoJSON.LineString;
+  distanceM: number;
+  durationS: number;
+};
+
+type OsrmResponse = {
+  routes?: Array&lt;{ geometry: GeoJSON.LineString; distance: number; duration: number }&gt;;
+};
+
+export const fetchWalkingRouteApi = async (from: GeoPoint, to: GeoPoint): Promise&lt;WalkingRoute&gt; =&gt; {
+  const path = `${from.lon},${from.lat};${to.lon},${to.lat}`;
+  const data = await publicGet&lt;OsrmResponse&gt;({
+    url: `${OSRM_FOOT_URL}/${path}?overview=full&amp;geometries=geojson`,
+  });
+  const route = data.routes?.[0];
+
+  if (!route) {
+    throw { message: 'Не удалось построить пешеходный маршрут', code: 'NO_ROUTE' };
+  }
+
+  return { line: route.geometry, distanceM: route.distance, durationS: route.duration };
+};</pre>
+        </div>
+        <div class="tabpanel" role="tabpanel" id="panel-map" aria-labelledby="tab-map" hidden>
+          <div class="code-head"><span>src/widgets/nearby-map/ui/nearby-map.tsx</span><button class="btn small" type="button" data-copy="code-map">Копировать</button></div>
+<pre class="code" id="code-map" data-lang="ts">import { JSX } from 'react';
+import { StyleSheet } from 'react-native';
+import { useUnit } from 'effector-react';
+import {
+  Camera,
+  GeoJSONSource,
+  Layer,
+  Map as MapLibreMap,
+  UserLocation,
+  ViewAnnotation,
+} from '@maplibre/maplibre-react-native';
+import { nearbyModel } from '@app/features/nearby-places';
+import { walkingRouteModel } from '@app/features/walking-route';
+import { useTheme } from '@app/shared/theme';
+import { PlacePin } from './place-pin';
+
+const MAP_STYLE_LIGHT = 'https://tiles.openfreemap.org/styles/liberty';
+const MAP_STYLE_DARK = 'https://tiles.openfreemap.org/styles/dark';
+
+export const NearbyMap = (): JSX.Element =&gt; {
+  const { colors, isDark } = useTheme();
+  const { places, center, route, selectedId, placeSelected } = useUnit({
+    places: nearbyModel.$places,
+    center: nearbyModel.$center,
+    route: walkingRouteModel.$route,
+    selectedId: nearbyModel.$selectedId,
+    placeSelected: nearbyModel.placeSelected,
+  });
+
+  return (
+    &lt;MapLibreMap style={styles.map} mapStyle={isDark ? MAP_STYLE_DARK : MAP_STYLE_LIGHT}&gt;
+      &lt;Camera center={[center.lon, center.lat]} zoom={14} /&gt;
+      &lt;UserLocation /&gt;
+      {route &amp;&amp; (
+        &lt;GeoJSONSource id="route" data={route.line}&gt;
+          &lt;Layer id="route-line" type="line" paint={{ 'line-color': colors.primary, 'line-width': 5 }} /&gt;
+        &lt;/GeoJSONSource&gt;
+      )}
+      {places.map((place) =&gt; (
+        &lt;ViewAnnotation
+          key={place.id}
+          id={place.id}
+          lngLat={[place.lon, place.lat]}
+          onPress={() =&gt; placeSelected(place.id)}
+        &gt;
+          &lt;PlacePin kind={place.kind} isSelected={place.id === selectedId} /&gt;
+        &lt;/ViewAnnotation&gt;
+      ))}
+    &lt;/MapLibreMap&gt;
+  );
+};
+
+const styles = StyleSheet.create({ map: { flex: 1 } });</pre>
+          <p>Имена компонентов и пропсов сверены с исходниками <code>@maplibre/maplibre-react-native@11.5.0</code>: <code>Map</code>, <code>Camera</code>, <code>ViewAnnotation</code>, <code>GeoJSONSource</code>, <code>Layer</code>.</p>
+        </div>
+        <div class="tabpanel" role="tabpanel" id="panel-prompt" aria-labelledby="tab-prompt" hidden>
+          <div class="code-head"><span>src/shared/api/generate-tour-api.ts · изменения</span><button class="btn small" type="button" data-copy="code-prompt">Копировать</button></div>
+<pre class="code" id="code-prompt" data-lang="ts">export type PlaceContext = {
+  lat: number;
+  lon: number;
+  address?: string;
+  extract?: string;
+};
+
+export type GenerateTourParams = {
+  placeName: string;
+  apiKey: string;
+  model: string;
+  context?: PlaceContext;
+};
+
+const buildUserPrompt = (placeName: string, context?: PlaceContext): string =&gt; {
+  if (!context) {
+    return `Создай экскурсию по месту: ${placeName}`;
+  }
+
+  return [
+    `Создай экскурсию по месту: ${placeName}`,
+    context.address ? `Где это: ${context.address}` : '',
+    `Координаты: ${context.lat.toFixed(5)}, ${context.lon.toFixed(5)}`,
+    context.extract ? `Справка из Википедии: ${context.extract}` : '',
+    'Опирайся на справку и общеизвестные факты. Если не уверен в факте, не упоминай его.',
+  ]
+    .filter(Boolean)
+    .join('\n\n');
+};
+
+// внутри generateTourApi
+{ role: 'user', content: buildUserPrompt(placeName, context) },</pre>
+          <p><code>TOUR_SYSTEM_PROMPT</code> не меняется: он уже требует факты, даты и имена вместо общих слов. Справка из Википедии даёт модели эти факты именно про выбранное место.</p>
+        </div>
+      </div>
+    </div>
+  </section>
+
+  <section class="section" id="phases" aria-labelledby="phases-title">
+    <div class="section-head">
+      <p class="eyebrow">Один разработчик</p>
+      <h2 id="phases-title">Этапы и оценка</h2>
+      <p class="lead">Сумма этапов — от 7,5 до 11 рабочих дней. Первый день уходит на главный риск: работает ли нативная карта на новой архитектуре RN 0.81. Если нет, переключаемся на WebView, остальные этапы от этого не меняются.</p>
+    </div>
+    <div class="ph-legend"><span><i class="lm"></i>Минимум</span><span><i class="lx"></i>С запасом</span></div>
+    <div class="phases">
+      <div class="ph-row"><div class="ph-name"><h3>Спайк карты</h3><span>MapLibre RN 11 на RN 0.81, сборка APK через prebuild, экран с картой OpenFreeMap. Итог: нативная карта или WebView.</span></div><div class="ph-track" aria-hidden="true"><span class="ph-min" style="--from:0;--to:.5"></span><span class="ph-max" style="--from:.5;--to:1"></span></div><div class="ph-val">0,5–1 дн</div></div>
+      <div class="ph-row"><div class="ph-name"><h3>Первая версия «Рядом»</h3><span>Вкладка, разрешение, позиция, Wikidata и GeoSearch, пины, круг 5 км, шторка со списком, кэш по ячейке.</span></div><div class="ph-track" aria-hidden="true"><span class="ph-min" style="--from:0;--to:2"></span><span class="ph-max" style="--from:2;--to:3"></span></div><div class="ph-val">2–3 дн</div></div>
+      <div class="ph-row"><div class="ph-name"><h3>Пешеходный маршрут</h3><span>OSRM и резерв ORS, линия на карте, км и минуты, ведение по GPS, «Открыть в навигаторе».</span></div><div class="ph-track" aria-hidden="true"><span class="ph-min full" style="--from:0;--to:2"></span></div><div class="ph-val">2 дн</div></div>
+      <div class="ph-row"><div class="ph-name"><h3>Экскурсия по месту</h3><span>Контекст места в <code>generateTourApi</code>, переход к генерации, сохранение с координатами.</span></div><div class="ph-track" aria-hidden="true"><span class="ph-min" style="--from:0;--to:1"></span><span class="ph-max" style="--from:1;--to:2"></span></div><div class="ph-val">1–2 дн</div></div>
+      <div class="ph-row"><div class="ph-name"><h3>Полировка</h3><span>Тёмный стиль карты, атрибуция, ошибки и офлайн, категории, Overpass по желанию.</span></div><div class="ph-track" aria-hidden="true"><span class="ph-min" style="--from:0;--to:2"></span><span class="ph-max" style="--from:2;--to:3"></span></div><div class="ph-val">2–3 дн</div></div>
+    </div>
+    <div class="ph-axis" aria-hidden="true"><span></span><div><span>0</span><span>1</span><span>2</span><span>3 дня</span></div><span></span></div>
+  </section>
+
+  <section class="section" id="risks" aria-labelledby="risks-title">
+    <div class="section-head">
+      <p class="eyebrow">Что может пойти не так</p>
+      <h2 id="risks-title">Риски и как их закрываем</h2>
+    </div>
+    <ul class="risks">
+      <li><span class="sev mid">Средний</span><div><h3>Нативная карта на New Architecture</h3><p>MapLibre RN 11 заявляет поддержку Expo 54 и RN 0.80+, проверяем на реальной сборке в первый день. Запасной путь — WebView с MapLibre GL JS: те же тайлы, те же данные, как в демо выше.</p></div></li>
+      <li><span class="sev mid">Средний</span><div><h3>Публичные сервисы работают на доверии</h3><p>Wikidata, OSRM и Overpass просят умеренную нагрузку и могут ограничить клиента. Закрываем кэшем по ячейке, User-Agent приложения и резервным ORS. При росте аудитории ставим свой прокси с кэшем на бесплатном тарифе Cloudflare Workers или поднимаем собственный OSRM.</p></div></li>
+      <li><span class="sev mid">Средний</span><div><h3>Wikidata медленно отвечает на первый запрос</h3><p>Новый район считается 8–20 секунд. Пока ждём, показываем ближайшие статьи Википедии (меньше секунды), затем подменяем список. Повторные запросы приходят из кэша.</p></div></li>
+      <li><span class="sev mid">Средний</span><div><h3>Модель может выдумать факты</h3><p>В запрос идут справка из Википедии, адрес и координаты, а в инструкции — просьба не упоминать то, в чём модель не уверена.</p></div></li>
+      <li><span class="sev low">Низкий</span><div><h3>В выдаче встречаются улицы и станции метро</h3><p>В Wikidata отсекаем их по типу объекта, в GeoSearch — по названию и описанию.</p></div></li>
+      <li><span class="sev low">Низкий</span><div><h3>Приватность координат</h3><p>Только разрешение «при использовании». Координаты перед запросами к спискам мест округляются, своего сервера, который бы их хранил, нет.</p></div></li>
+      <li><span class="sev low">Низкий</span><div><h3>Расход батареи при ведении</h3><p><code>watchPositionAsync</code> с шагом 10 м включается только на экране маршрута и выключается при уходе с него.</p></div></li>
+      <li><span class="sev low">Низкий</span><div><h3>Обязательная атрибуция</h3><p>Подпись © OpenStreetMap и OpenFreeMap на карте, ссылка на статью Википедии (CC BY-SA) в карточке места, OSRM в маршруте.</p></div></li>
+    </ul>
+    <h3>Что рассматривали и отложили</h3>
+    <div class="alts">
+      <div><h3>Google Maps</h3><p>Сама карта на Android бесплатна, но нужен платёжный аккаунт Google Cloud, а поиск мест и маршруты платные сверх квоты.</p></div>
+      <div><h3>Яндекс MapKit</h3><p>Нужен ключ, у бесплатного тарифа есть ограничения по использованию.</p></div>
+      <div><h3>Mapbox</h3><p>Ключ и привязанная карта, сверх бесплатного лимита платно.</p></div>
+      <div><h3>OpenTripMap</h3><p>Готовый каталог достопримечательностей, но текущий статус сервиса подтвердить не удалось. Держим как опцию.</p></div>
+      <div><h3>Свой бэкенд</h3><p>Для старта не нужен. Понадобится как прокси и кэш, когда вырастет нагрузка на публичные сервисы.</p></div>
+    </div>
+  </section>
+
+  <section class="section" aria-labelledby="sources-title">
+    <h2 id="sources-title">Источники</h2>
+    <ul class="sources">
+      <li><a href="https://openfreemap.org/quick_start/" target="_blank" rel="noopener">OpenFreeMap: стили и условия</a></li>
+      <li><a href="https://maplibre.org/maplibre-react-native/docs/setup/expo" target="_blank" rel="noopener">MapLibre React Native: установка в Expo</a></li>
+      <li><a href="https://docs.expo.dev/versions/latest/sdk/location/" target="_blank" rel="noopener">expo-location</a></li>
+      <li><a href="https://www.mediawiki.org/wiki/Extension:GeoData" target="_blank" rel="noopener">MediaWiki GeoData: list=geosearch</a></li>
+      <li><a href="https://www.mediawiki.org/wiki/Wikidata_Query_Service/User_Manual" target="_blank" rel="noopener">Wikidata Query Service: руководство и wikibase:around</a></li>
+      <li><a href="https://routing.openstreetmap.de/about.html" target="_blank" rel="noopener">FOSSGIS OSRM: профили и правила использования</a></li>
+      <li><a href="https://openrouteservice.org/plans/" target="_blank" rel="noopener">OpenRouteService: бесплатный тариф</a></li>
+      <li><a href="https://wiki.openstreetmap.org/wiki/Overpass_API" target="_blank" rel="noopener">Overpass API</a></li>
+      <li><a href="https://operations.osmfoundation.org/policies/nominatim/" target="_blank" rel="noopener">Nominatim: правила использования (адрес в демо)</a></li>
+    </ul>
+  </section>
+
+  <footer>Подготовлено 12 октября 2026 для OhMyGuide. Данные в демо: © участники OpenStreetMap, OpenFreeMap, OpenMapTiles, Википедия (CC BY-SA), Wikidata (CC0), маршруты OSRM на серверах FOSSGIS, адреса Nominatim.</footer>
+</div>
+
+<script src="https://cdnjs.cloudflare.com/ajax/libs/maplibre-gl/5.24.0/maplibre-gl.js"></script>
+<script>
+(() => {
+  const reduceMotion = matchMedia('(prefers-reduced-motion: reduce)').matches;
+
+  const scenario = document.getElementById('scenario');
+  const phone = document.getElementById('phone');
+  const steps = [...scenario.querySelectorAll('.step')];
+  const toggle = document.getElementById('scene-toggle');
+  const caption = document.getElementById('scene-caption');
+  const tourText = document.getElementById('tour-text');
+  const TOUR = 'Вы стоите в парке «Зарядье», открытом в сентябре 2017 года на месте снесённой гостиницы «Россия». Проект выбрали на международном конкурсе, победило бюро Diller Scofidio + Renfro. В парке воссозданы четыре природные зоны России: тундра, степь, лес и болота. Главная точка парка — Парящий мост, его V-образная консоль выносится над Москвой-рекой на 70 метров.';
+  const DURATIONS = [4800, 6000, 5800, 7600];
+  const NAMES = ['Геолокация', 'Места рядом', 'Маршрут', 'Экскурсия'];
+  let scene = 1;
+  let timer = 0;
+  let typing = 0;
+  let remaining = DURATIONS[0];
+  let startedAt = performance.now();
+  let playing = !reduceMotion;
+
+  const wave = document.getElementById('wave');
+  for (let index = 0; index < 30; index += 1) {
+    const bar = document.createElement('i');
+    const height = 0.35 + 0.6 * Math.abs(Math.sin(index * 1.7) * Math.cos(index * 0.6));
+    bar.style.setProperty('--h', height.toFixed(2));
+    bar.style.setProperty('--i', String(index));
+    wave.append(bar);
+  }
+
+  const next = () => show(scene % 4 + 1);
+
+  const schedule = (ms) => {
+    clearTimeout(timer);
+    remaining = ms;
+    startedAt = performance.now();
+    if (playing) {
+      timer = setTimeout(next, ms);
+    }
+  };
+
+  const typeTour = (active) => {
+    clearInterval(typing);
+    if (!active) {
+      return;
+    }
+    if (reduceMotion) {
+      tourText.textContent = TOUR;
+      return;
+    }
+    let shown = 0;
+    tourText.textContent = '';
+    typing = setInterval(() => {
+      if (!playing) {
+        return;
+      }
+      shown = Math.min(TOUR.length, shown + 3);
+      tourText.textContent = TOUR.slice(0, shown);
+      if (shown >= TOUR.length) {
+        clearInterval(typing);
+      }
+    }, 30);
+  };
+
+  function show(target) {
+    scene = target;
+    steps.forEach((step) => step.classList.remove('is-active'));
+    phone.dataset.scene = '';
+    void phone.offsetWidth;
+    phone.dataset.scene = String(target);
+    steps.forEach((step, index) => {
+      const active = index === target - 1;
+      step.style.setProperty('--dur', `${DURATIONS[index]}ms`);
+      step.classList.toggle('is-active', active);
+      const button = step.querySelector('.step-btn');
+      if (active) {
+        button.setAttribute('aria-current', 'step');
+      } else {
+        button.removeAttribute('aria-current');
+      }
+    });
+    caption.textContent = `Сцена ${target} из 4 · ${NAMES[target - 1]}`;
+    typeTour(target === 4);
+    schedule(DURATIONS[target - 1]);
+  }
+
+  const setPlaying = (value) => {
+    playing = value;
+    scenario.classList.toggle('is-paused', !playing);
+    toggle.textContent = playing ? 'Пауза' : 'Продолжить';
+    toggle.setAttribute('aria-pressed', String(!playing));
+    if (playing) {
+      startedAt = performance.now();
+      clearTimeout(timer);
+      timer = setTimeout(next, remaining);
+      return;
+    }
+    clearTimeout(timer);
+    remaining = Math.max(0, remaining - (performance.now() - startedAt));
+  };
+
+  steps.forEach((step, index) => {
+    step.querySelector('.step-btn').addEventListener('click', () => show(index + 1));
+  });
+  toggle.addEventListener('click', () => setPlaying(!playing));
+  setPlaying(playing);
+  show(1);
+
+  const packets = document.getElementById('fd-packets');
+  const PACKETS = [
+    ['e1', 0, 0.14], ['e2', 0, 0.14], ['e3', 0.16, 0.3], ['e4', 0.16, 0.3], ['e5', 0.32, 0.42], ['e6', 0.44, 0.54],
+    ['e7', 0.56, 0.68], ['e8', 0.56, 0.68, 'have'], ['e9', 0.7, 0.82], ['e10', 0.7, 0.82, 'have'], ['e11', 0.84, 0.96, 'have'],
+  ];
+  if (!reduceMotion) {
+    const SVG_NS = 'http://www.w3.org/2000/svg';
+    PACKETS.forEach(([edge, from, to, kind]) => {
+      const dot = document.createElementNS(SVG_NS, 'circle');
+      dot.setAttribute('r', '4.5');
+      dot.setAttribute('class', `fd-packet${kind ? ` ${kind}` : ''}`);
+      dot.setAttribute('opacity', '0');
+      const motion = document.createElementNS(SVG_NS, 'animateMotion');
+      motion.setAttribute('dur', '5s');
+      motion.setAttribute('repeatCount', 'indefinite');
+      motion.setAttribute('calcMode', 'linear');
+      motion.setAttribute('keyPoints', '0;0;1;1');
+      motion.setAttribute('keyTimes', `0;${from};${to};1`);
+      const path = document.createElementNS(SVG_NS, 'mpath');
+      path.setAttribute('href', `#${edge}`);
+      motion.append(path);
+      const fade = document.createElementNS(SVG_NS, 'animate');
+      fade.setAttribute('attributeName', 'opacity');
+      fade.setAttribute('dur', '5s');
+      fade.setAttribute('repeatCount', 'indefinite');
+      fade.setAttribute('calcMode', 'discrete');
+      fade.setAttribute('values', from === 0 ? '1;0' : '0;1;0');
+      fade.setAttribute('keyTimes', from === 0 ? `0;${to}` : `0;${from};${to}`);
+      dot.append(motion, fade);
+      packets.append(dot);
+    });
+  }
+
+  const escapeHtml = (text) => text.replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;');
+  const TOKEN = /(\/\/[^\n]*)|('(?:[^'\\\n]|\\.)*'|"(?:[^"\\\n]|\\.)*"|`(?:[^`\\]|\\.)*`)|\b(const|export|type|async|await|return|import|from|if|throw|new|try|finally|as|satisfies)\b/g;
+  document.querySelectorAll('pre[data-lang]').forEach((pre) => {
+    pre.innerHTML = escapeHtml(pre.textContent).replace(TOKEN, (match, comment, string, keyword) => {
+      if (comment) {
+        return `<span class="tok-com">${comment}</span>`;
+      }
+      if (string) {
+        return `<span class="tok-str">${string}</span>`;
+      }
+      return `<span class="tok-kw">${keyword}</span>`;
+    });
+  });
+
+  document.querySelectorAll('[data-tabs]').forEach((root) => {
+    const tabs = [...root.querySelectorAll('[role="tab"]')];
+    const select = (tab) => {
+      tabs.forEach((item) => {
+        const active = item === tab;
+        item.setAttribute('aria-selected', String(active));
+        item.tabIndex = active ? 0 : -1;
+        document.getElementById(item.getAttribute('aria-controls')).hidden = !active;
+      });
+    };
+    tabs.forEach((tab, index) => {
+      tab.addEventListener('click', () => select(tab));
+      tab.addEventListener('keydown', (event) => {
+        if (event.key !== 'ArrowRight' && event.key !== 'ArrowLeft') {
+          return;
+        }
+        const shift = event.key === 'ArrowRight' ? 1 : -1;
+        const target = tabs[(index + shift + tabs.length) % tabs.length];
+        select(target);
+        target.focus();
+      });
+    });
+  });
+
+  document.addEventListener('click', (event) => {
+    const button = event.target.closest('[data-copy]');
+    if (!button) {
+      return;
+    }
+    const source = document.getElementById(button.dataset.copy);
+    const text = source.textContent;
+    const done = (label) => {
+      button.textContent = label;
+      setTimeout(() => { button.textContent = 'Копировать'; }, 1600);
+    };
+    const selectText = () => {
+      const range = document.createRange();
+      range.selectNodeContents(source);
+      const selection = getSelection();
+      selection.removeAllRanges();
+      selection.addRange(range);
+      done('Выделено, нажмите Ctrl+C');
+    };
+    if (!navigator.clipboard) {
+      selectText();
+      return;
+    }
+    navigator.clipboard.writeText(text).then(() => done('Скопировано'), selectText);
+  });
+})();
+
+(() => {
+  const WIKI_API = 'https://ru.wikipedia.org/w/api.php';
+  const WDQS = 'https://query.wikidata.org/sparql';
+  const OSRM_FOOT = 'https://routing.openstreetmap.de/routed-foot/route/v1/foot';
+  const NOMINATIM = 'https://nominatim.openstreetmap.org/reverse';
+  const MAP_STYLES = { light: 'https://tiles.openfreemap.org/styles/liberty', dark: 'https://tiles.openfreemap.org/styles/dark' };
+  const RADIUS_M = 5000;
+  const GRID_STEP = 0.02;
+  const WALK_SPEED = 1.25;
+  const DETOUR = 1.3;
+  const FEW_SIGHTS = 15;
+  const NOT_SIGHTS = /(станци[яи] метро|\(станция|улица|переулок|проезд|тупик|шоссе|проспект|бульвар|набережная|район\b|округ\b|^список)/i;
+  const PRESETS = {
+    moscow: { lat: 55.752, lon: 37.6175, label: 'Москва, Кремль' },
+    spb: { lat: 59.939, lon: 30.3158, label: 'Санкт-Петербург, Дворцовая площадь' },
+    kazan: { lat: 55.799, lon: 49.1056, label: 'Казань, Кремль' },
+  };
+  const EMPTY = { type: 'FeatureCollection', features: [] };
+  const PLACE_ICON = '<svg width="20" height="20" viewBox="0 0 24 24" aria-hidden="true"><path d="M12 2a7 7 0 0 0-7 7c0 5 7 13 7 13s7-8 7-13a7 7 0 0 0-7-7zm0 9.6A2.6 2.6 0 1 1 12 6.4a2.6 2.6 0 0 1 0 5.2z"/></svg>';
+
+  const $ = (id) => document.getElementById(id);
+  const els = {
+    status: $('demo-status'), blocked: $('demo-blocked'), list: $('demo-list'), count: $('demo-count'), src: $('demo-src'),
+    details: $('demo-details'), fallback: $('demo-map-fallback'), hint: $('demo-hint'), mapBox: $('demo-map'),
+  };
+  const state = {
+    origin: null, nearest: [], sights: [], places: [], selectedId: null, route: null, request: 0,
+    sort: 'distance', map: null, me: null, styleReady: false, speaking: false,
+  };
+
+  const nf1 = new Intl.NumberFormat('ru-RU', { minimumFractionDigits: 1, maximumFractionDigits: 1 });
+  const pluralRules = new Intl.PluralRules('ru-RU');
+  const plural = (count, forms) => `${count} ${forms[pluralRules.select(count)] ?? forms.many}`;
+  const PLACES_FORMS = { one: 'место', few: 'места', many: 'мест' };
+  const LANG_FORMS = { one: 'языковой раздел', few: 'языковых раздела', many: 'языковых разделов' };
+  const escapeHtml = (text) => String(text).replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;').replace(/"/g, '&quot;');
+  const token = (name) => getComputedStyle(document.documentElement).getPropertyValue(name).trim();
+  const isDark = () => {
+    const theme = document.documentElement.dataset.theme;
+    if (theme) {
+      return theme === 'dark';
+    }
+    return matchMedia('(prefers-color-scheme: dark)').matches;
+  };
+  const formatDistance = (meters) => (meters < 1000 ? `${Math.max(10, Math.round(meters / 10) * 10)} м` : `${nf1.format(meters / 1000)} км`);
+  const formatMinutes = (seconds) => {
+    const minutes = Math.max(1, Math.round(seconds / 60));
+    if (minutes < 60) {
+      return `${minutes} мин`;
+    }
+    return `${Math.floor(minutes / 60)} ч ${minutes % 60} мин`;
+  };
+  const snap = (value) => (Math.round(value / GRID_STEP) * GRID_STEP).toFixed(2);
+
+  const distanceM = (from, to) => {
+    const rad = Math.PI / 180;
+    const dLat = (to.lat - from.lat) * rad;
+    const dLon = (to.lon - from.lon) * rad;
+    const h = Math.sin(dLat / 2) ** 2 + Math.cos(from.lat * rad) * Math.cos(to.lat * rad) * Math.sin(dLon / 2) ** 2;
+    return 2 * 6371008.8 * Math.asin(Math.sqrt(h));
+  };
+
+  const circle = (center, radius) => {
+    const rad = Math.PI / 180;
+    const angular = radius / 6371008.8;
+    const lat1 = center.lat * rad;
+    const lon1 = center.lon * rad;
+    const coordinates = [];
+    for (let step = 0; step <= 96; step += 1) {
+      const bearing = (2 * Math.PI * step) / 96;
+      const lat2 = Math.asin(Math.sin(lat1) * Math.cos(angular) + Math.cos(lat1) * Math.sin(angular) * Math.cos(bearing));
+      const lon2 = lon1 + Math.atan2(Math.sin(bearing) * Math.sin(angular) * Math.cos(lat1), Math.cos(angular) - Math.sin(lat1) * Math.sin(lat2));
+      coordinates.push([lon2 / rad, lat2 / rad]);
+    }
+    return { type: 'Feature', properties: {}, geometry: { type: 'Polygon', coordinates: [coordinates] } };
+  };
+
+  const circleBounds = (center) => {
+    const ring = circle(center, RADIUS_M).geometry.coordinates[0];
+    const lons = ring.map((point) => point[0]);
+    const lats = ring.map((point) => point[1]);
+    return [[Math.min(...lons), Math.min(...lats)], [Math.max(...lons), Math.max(...lats)]];
+  };
+
+  async function getJson(url, timeout = 15000) {
+    const controller = new AbortController();
+    const timer = setTimeout(() => controller.abort(), timeout);
+    try {
+      const response = await fetch(url, { signal: controller.signal });
+      if (!response.ok) {
+        const error = new Error(`HTTP ${response.status}`);
+        error.kind = 'http';
+        throw error;
+      }
+      return await response.json();
+    } catch (error) {
+      if (error.name === 'AbortError') {
+        const timeoutError = new Error('timeout');
+        timeoutError.kind = 'timeout';
+        throw timeoutError;
+      }
+      if (!error.kind) {
+        error.kind = 'network';
+      }
+      throw error;
+    } finally {
+      clearTimeout(timer);
+    }
+  }
+
+  const setStatus = (text, loading = false) => {
+    els.status.textContent = text;
+    els.status.classList.toggle('loading', loading);
+  };
+
+  const showBlocked = () => {
+    els.blocked.hidden = false;
+  };
+
+  const sightsQuery = (center) => `SELECT ?item ?itemLabel ?itemDescription ?lat ?lon ?title ?sitelinks ?image WHERE {
+  SERVICE wikibase:around {
+    ?item wdt:P625 ?coord .
+    bd:serviceParam wikibase:center "Point(${center.lon} ${center.lat})"^^geo:wktLiteral .
+    bd:serviceParam wikibase:radius "6" .
+  }
+  ?item wikibase:sitelinks ?sitelinks .
+  FILTER(?sitelinks >= 8)
+  ?article schema:about ?item ; schema:isPartOf <https://ru.wikipedia.org/> ; schema:name ?title .
+  FILTER EXISTS { ?item wdt:P31/wdt:P279* ?class . VALUES ?class { wd:Q811979 wd:Q33506 wd:Q22698 wd:Q4989906 wd:Q174782 wd:Q570116 wd:Q839954 } }
+  MINUS { ?item wdt:P31 ?type . VALUES ?type { wd:Q928830 wd:Q79007 } }
+  OPTIONAL { ?item wdt:P18 ?image }
+  BIND(geof:latitude(?coord) AS ?lat)
+  BIND(geof:longitude(?coord) AS ?lon)
+  SERVICE wikibase:label { bd:serviceParam wikibase:language "ru". }
+}
+ORDER BY DESC(?sitelinks)
+LIMIT 60`;
+
+  async function fetchNearest(origin) {
+    const geo = await getJson(`${WIKI_API}?${new URLSearchParams({
+      action: 'query', list: 'geosearch', gscoord: `${origin.lat}|${origin.lon}`, gsradius: String(RADIUS_M), gslimit: '50', format: 'json', origin: '*',
+    })}`);
+    const found = geo.query?.geosearch ?? [];
+    if (!found.length) {
+      return [];
+    }
+    const info = await getJson(`${WIKI_API}?${new URLSearchParams({
+      action: 'query', pageids: found.map((page) => page.pageid).join('|'), prop: 'pageimages|description',
+      piprop: 'thumbnail', pithumbsize: '120', pilimit: '50', format: 'json', origin: '*',
+    })}`);
+    const pages = info.query?.pages ?? {};
+    return found
+      .map((page) => ({
+        id: `p${page.pageid}`,
+        title: page.title,
+        label: page.title,
+        description: pages[page.pageid]?.description ?? '',
+        lat: page.lat,
+        lon: page.lon,
+        dist: page.dist,
+        fame: 0,
+        thumb: pages[page.pageid]?.thumbnail?.source ?? '',
+        source: 'Википедия',
+      }))
+      .filter((place) => !NOT_SIGHTS.test(`${place.title} ${place.description}`));
+  }
+
+  async function fetchSights(origin) {
+    const center = { lat: snap(origin.lat), lon: snap(origin.lon) };
+    const data = await getJson(`${WDQS}?format=json&query=${encodeURIComponent(sightsQuery(center))}`, 45000);
+    const unique = new Map();
+    for (const row of data.results?.bindings ?? []) {
+      const id = row.item.value.split('/').pop();
+      if (unique.has(id)) {
+        continue;
+      }
+      const label = row.itemLabel?.value;
+      const place = {
+        id,
+        title: row.title.value,
+        label: label && !/^Q\d+$/.test(label) ? label : row.title.value,
+        description: row.itemDescription?.value ?? '',
+        lat: Number(row.lat.value),
+        lon: Number(row.lon.value),
+        fame: Number(row.sitelinks.value),
+        thumb: row.image ? `${row.image.value.replace(/^http:/, 'https:')}?width=120` : '',
+        source: 'Wikidata',
+      };
+      place.dist = distanceM(origin, place);
+      if (place.dist <= RADIUS_M) {
+        unique.set(id, place);
+      }
+    }
+    return [...unique.values()];
+  }
+
+  const mergePlaces = (sights, nearest) => {
+    if (sights.length >= FEW_SIGHTS) {
+      return sights;
+    }
+    const titles = new Set(sights.map((place) => place.title.toLowerCase()));
+    return [...sights, ...nearest.filter((place) => !titles.has(place.title.toLowerCase()))];
+  };
+
+  const sorted = () => {
+    const places = [...state.places];
+    if (state.sort === 'fame') {
+      return places.sort((a, b) => b.fame - a.fame || a.dist - b.dist);
+    }
+    return places.sort((a, b) => a.dist - b.dist);
+  };
+
+  function renderSkeleton() {
+    els.list.innerHTML = Array.from({ length: 6 }, () => '<li class="skel" aria-hidden="true"><i></i><span><i></i><i></i></span></li>').join('');
+  }
+
+  function renderList() {
+    const places = sorted();
+    els.count.textContent = places.length ? `${plural(places.length, PLACES_FORMS)} в радиусе 5 км` : 'Места рядом';
+    if (!places.length) {
+      els.list.innerHTML = '<li class="dempty">Рядом не нашлось статей с координатами. Попробуйте другую точку.</li>';
+      return;
+    }
+    els.list.innerHTML = places.map((place) => {
+      const thumb = place.thumb
+        ? `<img class="dthumb" src="${escapeHtml(place.thumb)}" alt="" loading="lazy" referrerpolicy="no-referrer">`
+        : `<span class="dthumb">${PLACE_ICON}</span>`;
+      const meta = place.description || place.source;
+      return `<li><button class="ditem" type="button" data-id="${escapeHtml(place.id)}" aria-pressed="${place.id === state.selectedId}">
+        ${thumb}
+        <span><span class="dname">${escapeHtml(place.label)}</span><span class="ddesc">${escapeHtml(meta)}</span></span>
+        <span class="ddist">${formatDistance(place.dist)}<small>≈ ${formatMinutes((place.dist * DETOUR) / WALK_SPEED)}</small></span>
+      </button></li>`;
+    }).join('');
+  }
+
+  const placesData = () => ({
+    type: 'FeatureCollection',
+    features: state.places.map((place) => ({
+      type: 'Feature', properties: { id: place.id, title: place.label }, geometry: { type: 'Point', coordinates: [place.lon, place.lat] },
+    })),
+  });
+
+  function syncMap() {
+    const map = state.map;
+    if (!map || !state.styleReady) {
+      return;
+    }
+    map.getSource('radius')?.setData(state.origin ? circle(state.origin, RADIUS_M) : EMPTY);
+    map.getSource('places')?.setData(placesData());
+    map.getSource('route')?.setData(state.route ? { type: 'Feature', properties: {}, geometry: state.route } : EMPTY);
+    const activeFilter = ['==', ['get', 'id'], state.selectedId ?? ''];
+    if (map.getLayer('places-active')) {
+      map.setFilter('places-active', activeFilter);
+      map.setFilter('places-active-label', activeFilter);
+    }
+  }
+
+  function addOverlayLayers() {
+    const map = state.map;
+    state.styleReady = true;
+    const route = token('--route');
+    const pin = token('--pin');
+    const surface = token('--surface');
+    const casing = token('--route-casing');
+    const ink = token('--ink');
+    const russianName = ['coalesce', ['get', 'name:ru'], ['get', 'name']];
+    map.getStyle().layers.forEach((layer) => {
+      const field = layer.layout?.['text-field'];
+      if (layer.type === 'symbol' && field && JSON.stringify(field).includes('name')) {
+        map.setLayoutProperty(layer.id, 'text-field', russianName);
+      }
+    });
+    map.addSource('radius', { type: 'geojson', data: EMPTY });
+    map.addSource('route', { type: 'geojson', data: EMPTY });
+    map.addSource('places', { type: 'geojson', data: EMPTY });
+    map.addLayer({ id: 'radius-fill', type: 'fill', source: 'radius', paint: { 'fill-color': route, 'fill-opacity': 0.06 } });
+    map.addLayer({ id: 'radius-line', type: 'line', source: 'radius', paint: { 'line-color': route, 'line-width': 1.6, 'line-dasharray': [3, 2] } });
+    map.addLayer({ id: 'route-casing', type: 'line', source: 'route', layout: { 'line-join': 'round', 'line-cap': 'round' }, paint: { 'line-color': casing, 'line-width': 9 } });
+    map.addLayer({ id: 'route-line', type: 'line', source: 'route', layout: { 'line-join': 'round', 'line-cap': 'round' }, paint: { 'line-color': route, 'line-width': 5 } });
+    map.addLayer({ id: 'places', type: 'circle', source: 'places', paint: { 'circle-radius': 6, 'circle-color': pin, 'circle-stroke-color': surface, 'circle-stroke-width': 2 } });
+    map.addLayer({ id: 'places-active', type: 'circle', source: 'places', filter: ['==', ['get', 'id'], ''], paint: { 'circle-radius': 9, 'circle-color': route, 'circle-stroke-color': surface, 'circle-stroke-width': 3 } });
+    map.addLayer({
+      id: 'places-active-label', type: 'symbol', source: 'places', filter: ['==', ['get', 'id'], ''],
+      layout: { 'text-field': ['get', 'title'], 'text-font': ['Noto Sans Regular'], 'text-size': 13, 'text-offset': [0, 1.3], 'text-anchor': 'top', 'text-max-width': 12 },
+      paint: { 'text-color': ink, 'text-halo-color': surface, 'text-halo-width': 1.6 },
+    });
+    syncMap();
+  }
+
+  function initMap(center) {
+    if (!window.maplibregl) {
+      els.fallback.hidden = false;
+      els.hint.hidden = true;
+      return;
+    }
+    const map = new maplibregl.Map({
+      container: els.mapBox,
+      style: isDark() ? MAP_STYLES.dark : MAP_STYLES.light,
+      bounds: circleBounds(center),
+      fitBoundsOptions: { padding: 16 },
+      cooperativeGestures: true,
+      dragRotate: false,
+      pitchWithRotate: false,
+      attributionControl: { compact: false, customAttribution: 'Места: Википедия, Wikidata · Маршрут: OSRM, FOSSGIS' },
+      locale: {
+        'CooperativeGesturesHandler.WindowsHelpText': 'Чтобы изменить масштаб, крутите колесо с зажатым Ctrl',
+        'CooperativeGesturesHandler.MacHelpText': 'Чтобы изменить масштаб, крутите колесо с зажатой ⌘',
+        'CooperativeGesturesHandler.MobileHelpText': 'Двигайте карту двумя пальцами',
+      },
+    });
+    state.map = map;
+    map.touchZoomRotate.disableRotation();
+    map.on('style.load', addOverlayLayers);
+    map.on('error', () => {
+      if (!state.styleReady) {
+        els.fallback.hidden = false;
+        els.hint.hidden = true;
+      }
+    });
+    map.on('mouseenter', 'places', () => { map.getCanvas().style.cursor = 'pointer'; });
+    map.on('mouseleave', 'places', () => { map.getCanvas().style.cursor = ''; });
+    map.on('click', (event) => {
+      const hit = map.getLayer('places') ? map.queryRenderedFeatures(event.point, { layers: ['places'] })[0] : null;
+      if (hit) {
+        selectPlace(hit.properties.id, false);
+        return;
+      }
+      setOrigin({ lat: event.lngLat.lat, lon: event.lngLat.lng, label: 'точка на карте' });
+    });
+    $('zoom-in').addEventListener('click', () => map.zoomIn());
+    $('zoom-out').addEventListener('click', () => map.zoomOut());
+    const reloadStyle = () => {
+      state.styleReady = false;
+      map.setStyle(isDark() ? MAP_STYLES.dark : MAP_STYLES.light, { diff: false });
+    };
+    matchMedia('(prefers-color-scheme: dark)').addEventListener('change', reloadStyle);
+    new MutationObserver(reloadStyle).observe(document.documentElement, { attributes: true, attributeFilter: ['data-theme'] });
+  }
+
+  function placeMe() {
+    if (!state.map) {
+      return;
+    }
+    if (!state.me) {
+      const element = document.createElement('div');
+      element.className = 'demo-me';
+      element.setAttribute('aria-label', 'Вы здесь');
+      state.me = new maplibregl.Marker({ element }).setLngLat([state.origin.lon, state.origin.lat]).addTo(state.map);
+      return;
+    }
+    state.me.setLngLat([state.origin.lon, state.origin.lat]);
+  }
+
+  function failNetwork(error) {
+    els.list.innerHTML = '<li class="dempty">Список не загрузился.</li>';
+    els.count.textContent = 'Места рядом';
+    if (error.kind === 'network') {
+      showBlocked();
+      setStatus('Открытые API недоступны из этого окна.');
+      return;
+    }
+    setStatus(`Википедия не ответила (${error.message}). Попробуйте ещё раз через минуту.`);
+  }
+
+  async function loadPlaces() {
+    const requestId = ++state.request;
+    const origin = state.origin;
+    state.nearest = [];
+    state.places = [];
+    renderSkeleton();
+    syncMap();
+    setStatus('Ищу ближайшие статьи Википедии…', true);
+    const sightsPromise = fetchSights(origin);
+    sightsPromise.catch(() => {});
+    try {
+      state.nearest = await fetchNearest(origin);
+      if (requestId !== state.request) {
+        return;
+      }
+      state.places = state.nearest;
+      els.src.textContent = 'Пока: ближайшие статьи Википедии (GeoSearch)';
+      renderList();
+      syncMap();
+      setStatus('Ближайшие статьи на месте. Ищу самые известные места в радиусе 5 км в Wikidata, первый запрос по району занимает 8–20 секунд…', true);
+    } catch (error) {
+      if (requestId !== state.request) {
+        return;
+      }
+      failNetwork(error);
+      return;
+    }
+    try {
+      state.sights = await sightsPromise;
+      if (requestId !== state.request) {
+        return;
+      }
+      state.places = mergePlaces(state.sights, state.nearest);
+      els.src.textContent = state.sights.length >= FEW_SIGHTS
+        ? 'Источник: Wikidata, фото и описания из Википедии'
+        : 'Источник: Wikidata, дополнено ближайшими статьями Википедии';
+      renderList();
+      syncMap();
+      setStatus(`Готово: ${plural(state.places.length, PLACES_FORMS)} в радиусе 5 км от точки «${origin.label}».`);
+    } catch (error) {
+      if (requestId !== state.request) {
+        return;
+      }
+      setStatus(`Wikidata не ответила (${error.kind === 'timeout' ? 'истекло время ожидания' : error.message}), показываю ближайшие статьи Википедии.`);
+    }
+  }
+
+  function setOrigin(origin) {
+    state.origin = origin;
+    state.selectedId = null;
+    state.route = null;
+    stopSpeech();
+    renderEmptyDetails();
+    document.querySelectorAll('[data-preset]').forEach((button) => {
+      button.setAttribute('aria-pressed', String(PRESETS[button.dataset.preset] === origin));
+    });
+    if (!state.map) {
+      initMap(origin);
+    } else {
+      state.map.fitBounds(circleBounds(origin), { padding: 16, duration: reduceMotionNow() ? 0 : 900 });
+    }
+    placeMe();
+    loadPlaces();
+  }
+
+  const reduceMotionNow = () => matchMedia('(prefers-reduced-motion: reduce)').matches;
+  const selected = () => state.places.find((place) => place.id === state.selectedId);
+
+  function renderEmptyDetails() {
+    els.details.classList.remove('has-place');
+    els.details.innerHTML = '<p class="details-empty">Выберите место в списке или на карте, чтобы построить пешеходный маршрут и собрать запрос для экскурсии.</p>';
+  }
+
+  function renderDetails(place) {
+    els.details.classList.add('has-place');
+    const articleUrl = `https://ru.wikipedia.org/wiki/${encodeURIComponent(place.title.replace(/ /g, '_'))}`;
+    els.details.innerHTML = `
+      <div class="d-main">
+        <p class="eyebrow">Выбранное место · ${formatDistance(place.dist)} по прямой${place.fame ? ` · ${plural(place.fame, LANG_FORMS)}` : ''}</p>
+        <h3 class="d-title">${escapeHtml(place.label)}</h3>
+        ${place.description ? `<p class="d-desc">${escapeHtml(place.description)}</p>` : ''}
+        <p class="d-extract" id="d-extract">Загружаю справку из Википедии…</p>
+        <p><a href="${escapeHtml(articleUrl)}" target="_blank" rel="noopener">Статья в Википедии</a></p>
+        <div class="d-actions">
+          <button class="btn primary" type="button" id="d-route">Пешеходный маршрут</button>
+          <button class="btn" type="button" id="d-prompt">Собрать запрос экскурсии</button>
+          <button class="btn" type="button" id="d-speak">Озвучить справку</button>
+        </div>
+        <div id="d-route-out" aria-live="polite"></div>
+      </div>
+      <div class="d-side">
+        <div class="code-head"><span>Запрос, который уйдёт в Groq</span><button class="btn small" type="button" data-copy="d-prompt-text" id="d-copy" hidden>Копировать</button></div>
+        <pre class="code wrap-text" id="d-prompt-text">Нажмите «Собрать запрос экскурсии»: демо возьмёт название, адрес, координаты и справку и покажет текст, который приложение отправит в Groq вместе с текущим системным промптом.</pre>
+      </div>`;
+    $('d-route').addEventListener('click', buildRoute);
+    $('d-prompt').addEventListener('click', buildPrompt);
+    $('d-speak').addEventListener('click', toggleSpeech);
+    if (!('speechSynthesis' in window)) {
+      $('d-speak').disabled = true;
+      $('d-speak').title = 'Браузер не поддерживает синтез речи';
+    }
+  }
+
+  async function loadExtract(place) {
+    if (place.extract !== undefined) {
+      return place.extract;
+    }
+    const data = await getJson(`${WIKI_API}?${new URLSearchParams({
+      action: 'query', titles: place.title, prop: 'extracts', exintro: '1', explaintext: '1', exsentences: '4', redirects: '1', format: 'json', origin: '*',
+    })}`);
+    const page = Object.values(data.query?.pages ?? {})[0];
+    place.extract = (page?.extract ?? '').replace(/\s+/g, ' ').trim();
+    return place.extract;
+  }
+
+  async function showExtract(place) {
+    try {
+      const extract = await loadExtract(place);
+      if (state.selectedId !== place.id) {
+        return;
+      }
+      $('d-extract').textContent = extract || 'В статье нет вводного абзаца.';
+    } catch {
+      if (state.selectedId === place.id) {
+        $('d-extract').textContent = 'Справка не загрузилась.';
+      }
+    }
+  }
+
+  function selectPlace(id, fly = true) {
+    const place = state.places.find((item) => item.id === id);
+    if (!place) {
+      return;
+    }
+    state.selectedId = id;
+    state.route = null;
+    stopSpeech();
+    els.list.querySelectorAll('.ditem').forEach((button) => {
+      const active = button.dataset.id === id;
+      button.setAttribute('aria-pressed', String(active));
+      if (active) {
+        button.scrollIntoView({ block: 'nearest' });
+      }
+    });
+    syncMap();
+    if (fly && state.map) {
+      state.map.easeTo({ center: [place.lon, place.lat], zoom: Math.max(state.map.getZoom(), 13.5), duration: reduceMotionNow() ? 0 : 700 });
+    }
+    renderDetails(place);
+    showExtract(place);
+  }
+
+  async function buildRoute() {
+    const place = selected();
+    const out = $('d-route-out');
+    if (!place) {
+      return;
+    }
+    const origin = state.origin;
+    out.innerHTML = '<p class="status loading">Строю пешеходный маршрут…</p>';
+    const osmLink = `https://www.openstreetmap.org/directions?engine=fossgis_osrm_foot&route=${origin.lat.toFixed(5)}%2C${origin.lon.toFixed(5)}%3B${place.lat.toFixed(5)}%2C${place.lon.toFixed(5)}`;
+    try {
+      const data = await getJson(`${OSRM_FOOT}/${origin.lon},${origin.lat};${place.lon},${place.lat}?overview=full&geometries=geojson`, 20000);
+      const route = data.routes?.[0];
+      if (!route) {
+        throw new Error('нет маршрута');
+      }
+      if (state.selectedId !== place.id) {
+        return;
+      }
+      state.route = route.geometry;
+      syncMap();
+      if (state.map) {
+        const bounds = new maplibregl.LngLatBounds();
+        route.geometry.coordinates.forEach((point) => bounds.extend(point));
+        state.map.fitBounds(bounds, { padding: 60, maxZoom: 16, duration: reduceMotionNow() ? 0 : 800 });
+      }
+      out.innerHTML = `<div class="route-stats"><strong>${formatMinutes(route.duration)}</strong><span>${formatDistance(route.distance)} пешком · профиль foot, OSRM</span><a href="${osmLink}" target="_blank" rel="noopener">Открыть на openstreetmap.org</a></div>`;
+    } catch (error) {
+      if (error.kind === 'network') {
+        showBlocked();
+      }
+      out.innerHTML = `<p class="error-text">Маршрут не построился (${escapeHtml(error.kind === 'timeout' ? 'истекло время ожидания' : error.message)}). Попробуйте ещё раз или <a href="${osmLink}" target="_blank" rel="noopener">откройте его на openstreetmap.org</a>.</p>`;
+    }
+  }
+
+  const shortAddress = (result) => {
+    const address = result.address ?? {};
+    const street = [address.road ?? address.pedestrian ?? address.square ?? address.footway, address.house_number].filter(Boolean).join(', ');
+    const city = address.city ?? address.town ?? address.village ?? address.state;
+    return [street, city].filter(Boolean).join(', ') || result.display_name || '';
+  };
+
+  async function buildPrompt() {
+    const place = selected();
+    const target = $('d-prompt-text');
+    if (!place) {
+      return;
+    }
+    target.textContent = 'Собираю контекст: адрес из Nominatim и справку из Википедии…';
+    let address = '';
+    try {
+      const result = await getJson(`${NOMINATIM}?${new URLSearchParams({ lat: String(place.lat), lon: String(place.lon), format: 'jsonv2', zoom: '18', 'accept-language': 'ru' })}`, 10000);
+      address = shortAddress(result);
+    } catch (error) {
+      address = '';
+    }
+    let extract = '';
+    try {
+      extract = await loadExtract(place);
+    } catch (error) {
+      extract = '';
+    }
+    if (state.selectedId !== place.id) {
+      return;
+    }
+    const lines = [`Создай экскурсию по месту: ${place.label}`];
+    if (address) {
+      lines.push(`Где это: ${address}`);
+    }
+    lines.push(`Координаты: ${place.lat.toFixed(5)}, ${place.lon.toFixed(5)}`);
+    if (extract) {
+      lines.push(`Справка из Википедии: ${extract}`);
+    }
+    lines.push('Опирайся на справку и общеизвестные факты. Если не уверен в факте, не упоминай его.');
+    target.textContent = `system: TOUR_SYSTEM_PROMPT (как сейчас)\n\nuser:\n${lines.join('\n\n')}`;
+    $('d-copy').hidden = false;
+  }
+
+  function stopSpeech() {
+    if ('speechSynthesis' in window && state.speaking) {
+      speechSynthesis.cancel();
+    }
+    state.speaking = false;
+  }
+
+  async function toggleSpeech() {
+    const place = selected();
+    const button = $('d-speak');
+    if (!place || !('speechSynthesis' in window)) {
+      return;
+    }
+    if (state.speaking) {
+      stopSpeech();
+      button.textContent = 'Озвучить справку';
+      return;
+    }
+    let text = '';
+    try {
+      text = await loadExtract(place);
+    } catch (error) {
+      text = '';
+    }
+    const utterance = new SpeechSynthesisUtterance(text || `${place.label}. ${place.description}`);
+    utterance.lang = 'ru-RU';
+    const voice = speechSynthesis.getVoices().find((item) => item.lang?.toLowerCase().startsWith('ru'));
+    if (voice) {
+      utterance.voice = voice;
+    }
+    const reset = () => {
+      state.speaking = false;
+      if ($('d-speak')) {
+        $('d-speak').textContent = 'Озвучить справку';
+      }
+    };
+    utterance.onend = reset;
+    utterance.onerror = reset;
+    state.speaking = true;
+    button.textContent = 'Остановить';
+    speechSynthesis.speak(utterance);
+  }
+
+  const geoError = (error) => {
+    if (error.code === 1) {
+      return 'доступ запрещён';
+    }
+    if (error.code === 3) {
+      return 'истекло время ожидания';
+    }
+    return 'позиция не определена';
+  };
+
+  $('demo-locate').addEventListener('click', () => {
+    if (!('geolocation' in navigator)) {
+      setStatus('Браузер не отдаёт геолокацию. Выберите город или кликните по карте.');
+      return;
+    }
+    setStatus('Запрашиваю местоположение у браузера…', true);
+    navigator.geolocation.getCurrentPosition(
+      (position) => setOrigin({ lat: position.coords.latitude, lon: position.coords.longitude, label: 'ваше местоположение' }),
+      (error) => setStatus(`Местоположение недоступно: ${geoError(error)}. Выберите город или кликните по карте.`),
+      { enableHighAccuracy: true, timeout: 10000, maximumAge: 60000 },
+    );
+  });
+
+  document.querySelectorAll('[data-preset]').forEach((button) => {
+    button.addEventListener('click', () => setOrigin(PRESETS[button.dataset.preset]));
+  });
+
+  document.querySelectorAll('[data-sort]').forEach((button) => {
+    button.addEventListener('click', () => {
+      state.sort = button.dataset.sort;
+      document.querySelectorAll('[data-sort]').forEach((item) => item.setAttribute('aria-pressed', String(item === button)));
+      if (state.places.length) {
+        renderList();
+      }
+    });
+  });
+
+  els.list.addEventListener('click', (event) => {
+    const item = event.target.closest('.ditem');
+    if (item) {
+      selectPlace(item.dataset.id);
+    }
+  });
+
+  if (matchMedia('(hover: none)').matches) {
+    els.hint.textContent = 'Карту двигают двумя пальцами';
+  }
+  setOrigin(PRESETS.moscow);
+})();
+</script>
+
+</body>
+</html>

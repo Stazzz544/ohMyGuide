@@ -31,6 +31,8 @@ export type ThemeColors = {
   inputBg: string;
   inputBorder: string;
   placeholder: string;
+  // Карта
+  mapPin: string;
 };
 
 export const lightColors: ThemeColors = {
@@ -54,6 +56,7 @@ export const lightColors: ThemeColors = {
   inputBg: '#f4f4f7',
   inputBorder: '#d9d9e1',
   placeholder: '#a0a0b0',
+  mapPin: '#d4442c',
 };
 
 export const darkColors: ThemeColors = {
@@ -77,4 +80,5 @@ export const darkColors: ThemeColors = {
   inputBg: '#1a1a2e',
   inputBorder: '#2a2a40',
   placeholder: '#6a6a80',
+  mapPin: '#f27b63',
 };

@@ -43,6 +43,15 @@ export default function TabsLayout(): JSX.Element {
         }}
       />
       <Tabs.Screen
+        name="nearby"
+        options={{
+          title: "Рядом",
+          tabBarIcon: ({ color, size }) => (
+            <Ionicons name="compass-outline" size={size} color={color} />
+          ),
+        }}
+      />
+      <Tabs.Screen
         name="saved"
         options={{
           title: "Сохранённые",

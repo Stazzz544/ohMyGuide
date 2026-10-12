@@ -5,3 +5,9 @@ export { DEFAULT_GROQ_MODEL, fetchGroqModelsApi, pickFallbackModel } from './gro
 export type { GroqModel } from './groq-models-api';
 export { generateTourApi } from './generate-tour-api';
 export type { GenerateTourParams } from './generate-tour-api';
+export { APP_USER_AGENT, buildQuery, publicGet } from './public-client';
+export { fetchWikidataSightsApi } from './wikidata-sights-api';
+export type { WikidataSight } from './wikidata-sights-api';
+export { fetchWikiNearbyApi } from './wiki-geosearch-api';
+export type { WikiNearbyPage } from './wiki-geosearch-api';
+export { fetchMapStyleApi } from './map-style-api';

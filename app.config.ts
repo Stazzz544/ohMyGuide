@@ -39,5 +39,13 @@ export default ({ config }: ConfigContext): ExpoConfig => ({
   },
   plugins: [
     'expo-router',
+    '@maplibre/maplibre-react-native',
+    [
+      'expo-location',
+      {
+        locationWhenInUsePermission:
+          'OhMyGuide показывает достопримечательности рядом с вами и строит пешеходный маршрут',
+      },
+    ],
   ],
 });

@@ -7,3 +7,14 @@ export { splitTextIntoChunks, splitIntoSentences, splitTextWithStructure, splitT
 export type { TextStructure, ParagraphStructure, TextStructureV2, WordInfo, SentenceInfo, ParagraphStructureV2 } from './text-chunking';
 export { exportTour } from './export-tour';
 export type { ExportTourParams, ExportFormat, ExportResult } from './export-tour';
+export {
+  circleBounds,
+  circlePolygon,
+  distanceM,
+  estimateWalkMinutes,
+  formatDistance,
+  snapToGrid,
+} from './geo';
+export type { GeoBounds, GeoPoint } from './geo';
+export { pluralize } from './plural';
+export type { PluralForms } from './plural';
