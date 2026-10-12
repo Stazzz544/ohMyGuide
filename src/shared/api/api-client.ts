@@ -12,48 +12,31 @@ type RequestConfig = {
   path: string;
   method: 'GET' | 'POST';
   body?: Record<string, unknown>;
-  headers?: Record<string, string>;
   apiKey: string;
-  // bearer: Authorization: Bearer <key>
-  // x-api-key: x-api-key: <key>
-  // none: провайдер сам выставляет заголовки авторизации через formatRequest
-  authStyle?: 'bearer' | 'x-api-key' | 'none';
   timeout?: number;
+};
+
+export const getErrorMessage = (error: unknown): string => {
+  if (typeof error === 'object' && error !== null && 'message' in error) {
+    return String(error.message);
+  }
+  return 'Произошла неизвестная ошибка';
 };
 
 // Универсальный API-клиент с таймаутом и обработкой ошибок
 export const apiClient = {
   async request<T>(config: RequestConfig): Promise<T> {
-    const {
-      baseUrl,
-      path,
-      method,
-      body,
-      headers = {},
-      apiKey,
-      authStyle = 'bearer',
-      timeout = API_TIMEOUT_MS,
-    } = config;
+    const { baseUrl, path, method, body, apiKey, timeout = API_TIMEOUT_MS } = config;
 
     const controller = new AbortController();
     const timeoutId = setTimeout(() => controller.abort(), timeout);
-
-    // Формируем заголовки авторизации
-    const authHeaders: Record<string, string> = {};
-    if (authStyle === 'bearer') {
-      authHeaders['Authorization'] = `Bearer ${apiKey}`;
-    } else if (authStyle === 'x-api-key') {
-      authHeaders['x-api-key'] = apiKey;
-    }
-    // authStyle === 'none': авторизация задаётся провайдером через headers в formatRequest
 
     try {
       const response = await fetch(`${baseUrl}${path}`, {
         method,
         headers: {
           'Content-Type': 'application/json',
-          ...authHeaders,
-          ...headers,
+          Authorization: `Bearer ${apiKey.trim()}`,
         },
         body: body ? JSON.stringify(body) : undefined,
         signal: controller.signal,
@@ -62,11 +45,16 @@ export const apiClient = {
       if (!response.ok) {
         const errorBody = await response.text().catch(() => '');
         let errorMessage = `Ошибка сервера: ${response.status}`;
+        let errorCode: string | undefined;
 
-        // Пытаемся извлечь сообщение из тела ошибки
+        // Пытаемся извлечь сообщение и код из тела ошибки
         try {
-          const parsed = JSON.parse(errorBody) as { error?: { message?: string }; message?: string };
+          const parsed = JSON.parse(errorBody) as {
+            error?: { message?: string; code?: string };
+            message?: string;
+          };
           errorMessage = parsed.error?.message ?? parsed.message ?? errorMessage;
+          errorCode = parsed.error?.code;
         } catch {
           // Не удалось распарсить — используем дефолтное сообщение
         }
@@ -74,7 +62,7 @@ export const apiClient = {
         throw {
           message: errorMessage,
           status: response.status,
-          code: errorBody,
+          code: errorCode,
         } satisfies ApiError;
       }
 

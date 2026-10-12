@@ -21,7 +21,7 @@ export const STORAGE_KEYS = {
   FOLDERS: 'ohmyguide_folders',
   LAST_TOUR_CACHE: 'ohmyguide_last_tour',
   THEME_OVERRIDE: 'ohmyguide_theme',
-  AI_PROVIDER: 'ohmyguide_ai_provider',
+  AI_MODEL: 'ohmyguide_ai_model',
   AI_API_KEY: 'ohmyguide_ai_api_key',
 } as const;
 
