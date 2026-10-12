@@ -1,16 +1,36 @@
 import { createStore, createEvent, createEffect, sample, combine } from 'effector';
-import { generateTourApi } from '@app/shared/api';
+import {
+  fetchGroqModelsApi,
+  generateTourApi,
+  getErrorMessage,
+  isModelUnavailableError,
+  pickFallbackModel,
+} from '@app/shared/api';
 import { tourStore } from '@app/entities/tour';
 import { settingsModel } from '@app/features/ai-settings';
 
 import type { CachedTour } from '@app/entities/tour';
-import type { AiProviderId } from '@app/shared/api';
+import type { GenerateTourParams } from '@app/shared/api';
 
 // --- Effects ---
 
+// Модель отключили в Groq после загрузки списка — один раз повторяем на доступной
 const generateTourFx = createEffect(
-  async (params: { placeName: string; providerId: AiProviderId; apiKey: string }): Promise<string> => {
-    return generateTourApi(params);
+  async (params: GenerateTourParams): Promise<{ text: string; model: string }> => {
+    try {
+      return { text: await generateTourApi(params), model: params.model };
+    } catch (error) {
+      if (!isModelUnavailableError(error)) {
+        throw error;
+      }
+      const models = await fetchGroqModelsApi(params.apiKey);
+      const availableModels = models.filter((item) => item.id !== params.model);
+      if (availableModels.length === 0) {
+        throw error;
+      }
+      const model = pickFallbackModel(availableModels);
+      return { text: await generateTourApi({ ...params, model }), model };
+    }
   },
 );
 
@@ -19,6 +39,7 @@ const generateTourFx = createEffect(
 const $placeName = createStore<string>('');
 const $generatedText = createStore<string>('');
 const $error = createStore<string | null>(null);
+const $modelNotice = createStore<string | null>(null);
 const $isPrepareMode = createStore<boolean>(false);
 const $isGenerating = generateTourFx.pending;
 
@@ -43,11 +64,11 @@ sample({
   target: $error,
 });
 
-// Сброс ошибки при начале новой генерации
+// Сброс ошибки и уведомления о смене модели при начале новой генерации
 sample({
   clock: generateTourFx,
   fn: () => null,
-  target: $error,
+  target: [$error, $modelNotice],
 });
 
 // Загрузка тура из сохранённых
@@ -87,8 +108,8 @@ sample({
   clock: generatePressed,
   source: {
     placeName: $placeName,
-    providerId: settingsModel.$provider,
     apiKey: settingsModel.$apiKey,
+    model: settingsModel.$model,
   },
   filter: ({ placeName, apiKey }) => placeName.trim().length > 0 && apiKey.trim().length > 0,
   target: generateTourFx,
@@ -99,8 +120,8 @@ sample({
   clock: prepareOfflinePressed,
   source: {
     placeName: $placeName,
-    providerId: settingsModel.$provider,
     apiKey: settingsModel.$apiKey,
+    model: settingsModel.$model,
   },
   filter: ({ placeName, apiKey }) => placeName.trim().length > 0 && apiKey.trim().length > 0,
   target: generateTourFx,
@@ -109,6 +130,7 @@ sample({
 // Успешная генерация — обновляем текст
 sample({
   clock: generateTourFx.doneData,
+  fn: ({ text }) => text,
   target: $generatedText,
 });
 
@@ -116,7 +138,7 @@ sample({
 sample({
   clock: generateTourFx.doneData,
   source: $placeName,
-  fn: (placeName, text): CachedTour => ({
+  fn: (placeName, { text }): CachedTour => ({
     placeName,
     generatedText: text,
     cachedAt: new Date().toISOString(),
@@ -129,19 +151,30 @@ sample({
   clock: generateTourFx.doneData,
   source: { placeName: $placeName, isPrepareMode: $isPrepareMode },
   filter: ({ isPrepareMode }) => isPrepareMode,
-  fn: ({ placeName }, generatedText) => ({ placeName, generatedText }),
+  fn: ({ placeName }, { text }) => ({ placeName, generatedText: text }),
   target: tourStore.tourSaved,
+});
+
+// Генерация прошла на запасной модели — запоминаем её и сообщаем пользователю
+sample({
+  clock: generateTourFx.done,
+  filter: ({ params, result }) => params.model !== result.model,
+  fn: ({ result }) => result.model,
+  target: settingsModel.modelSelected,
+});
+
+sample({
+  clock: generateTourFx.done,
+  filter: ({ params, result }) => params.model !== result.model,
+  fn: ({ params, result }) =>
+    `Модель «${params.model}» недоступна в Groq — экскурсия создана на «${result.model}», она выбрана в настройках`,
+  target: $modelNotice,
 });
 
 // Ошибка генерации
 sample({
   clock: generateTourFx.failData,
-  fn: (error): string => {
-    if (typeof error === 'object' && error !== null && 'message' in error) {
-      return (error as { message: string }).message;
-    }
-    return 'Произошла неизвестная ошибка';
-  },
+  fn: getErrorMessage,
   target: $error,
 });
 
@@ -155,7 +188,7 @@ sample({
 sample({
   clock: resetGeneration,
   fn: () => null,
-  target: $error,
+  target: [$error, $modelNotice],
 });
 
 // Составной стор: можно ли генерировать
@@ -170,6 +203,7 @@ export const generateModel = {
   $placeName,
   $generatedText,
   $error,
+  $modelNotice,
   $isGenerating,
   $canGenerate,
   $isPrepareMode,

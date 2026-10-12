@@ -18,6 +18,7 @@ export const GenerateForm = (): JSX.Element => {
     isGenerating,
     canGenerate,
     error,
+    modelNotice,
     isConfigured,
     generatedText,
     folderPickerVisible,
@@ -28,6 +29,7 @@ export const GenerateForm = (): JSX.Element => {
     isGenerating: generateModel.$isGenerating,
     canGenerate: generateModel.$canGenerate,
     error: generateModel.$error,
+    modelNotice: generateModel.$modelNotice,
     isConfigured: settingsModel.$isConfigured,
     generatedText: generateModel.$generatedText,
     folderPickerVisible: saveModel.$folderPickerVisible,
@@ -49,12 +51,19 @@ export const GenerateForm = (): JSX.Element => {
           <View style={[styles.hint, { backgroundColor: `${colors.info}10` }]}>
             <Ionicons name="information-circle-outline" size={18} color={colors.info} />
             <Text style={[styles.hintText, { color: colors.textSecondary }]}>
-              Укажите API-ключ в настройках для генерации экскурсий
+              Укажите API-ключ Groq в настройках для генерации экскурсий
             </Text>
           </View>
         ) : null}
 
         {error ? <ErrorMessage message={error} /> : null}
+
+        {modelNotice ? (
+          <View style={[styles.hint, { backgroundColor: `${colors.info}10` }]}>
+            <Ionicons name="swap-horizontal-outline" size={18} color={colors.info} />
+            <Text style={[styles.hintText, { color: colors.textSecondary }]}>{modelNotice}</Text>
+          </View>
+        ) : null}
 
         <View style={styles.buttons}>
           <Button

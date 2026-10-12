@@ -3,7 +3,7 @@ import { JSX } from "react";
 import { Ionicons } from "@expo/vector-icons";
 import { useTheme } from "@app/shared/theme";
 import { Button } from "@app/shared/ui";
-import { ProviderSelector } from "@app/features/ai-settings";
+import { AiSettingsForm } from "@app/features/ai-settings";
 import { VoiceSelector } from "@app/features/speech-player";
 
 export default function SettingsScreen(): JSX.Element {
@@ -14,7 +14,7 @@ export default function SettingsScreen(): JSX.Element {
       style={[styles.container, { backgroundColor: colors.bgPrimary }]}
       contentContainerStyle={styles.content}
     >
-      <ProviderSelector />
+      <AiSettingsForm />
 
       <View style={styles.section}>
         <Text style={[styles.sectionTitle, { color: colors.textPrimary }]}>
