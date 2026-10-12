@@ -4,18 +4,21 @@ import { useUnit } from 'effector-react';
 import { useTheme } from '@app/shared/theme';
 import { CARD_BORDER_RADIUS } from '@app/shared/config';
 import { locationModel } from '@app/features/user-location';
+import { nearbyModel } from '@app/features/nearby-places';
 import { explorerModel } from '../model/explorer-model';
 import { NearbyMap } from './nearby-map';
 import { NearbyList } from './nearby-list';
 import { LocatingState, PermissionDenied } from './location-states';
 import { PlaceCard } from './place-card';
+import { RadiusSwitch } from './radius-switch';
 
 export const NearbyExplorer = (): JSX.Element => {
   const { colors, scheme } = useTheme();
-  const { permission, position, locationError, explorerOpened, mapStyleRequested } = useUnit({
+  const { permission, position, locationError, selectedPlace, explorerOpened, mapStyleRequested } = useUnit({
     permission: locationModel.$permission,
     position: locationModel.$position,
     locationError: locationModel.$error,
+    selectedPlace: nearbyModel.$selectedPlace,
     explorerOpened: explorerModel.explorerOpened,
     mapStyleRequested: explorerModel.mapStyleRequested,
   });
@@ -36,15 +39,31 @@ export const NearbyExplorer = (): JSX.Element => {
     return <LocatingState error={locationError} />;
   }
 
+  const isPlaceSelected = selectedPlace !== null;
+
+  // Карточка выбранного места — отдельная панель вместо списка. Список прячем, но не размонтируем (сохраняется
+  // скролл), и flex-стиль его панели не переключаем: Yoga после такого переключения раскладывала панель неверно
   return (
     <View style={[styles.container, { backgroundColor: colors.bgSecondary }]}>
       <View style={styles.map}>
         <NearbyMap />
+        {!isPlaceSelected && <RadiusSwitch />}
       </View>
-      <View style={[styles.panel, { backgroundColor: colors.bgCard, borderColor: colors.border }]}>
-        <PlaceCard />
+      <View
+        style={[
+          styles.panel,
+          styles.panelWithList,
+          { backgroundColor: colors.bgCard, borderColor: colors.border },
+          isPlaceSelected && styles.hidden,
+        ]}
+      >
         <NearbyList />
       </View>
+      {isPlaceSelected && (
+        <View style={[styles.panel, { backgroundColor: colors.bgCard, borderColor: colors.border }]}>
+          <PlaceCard />
+        </View>
+      )}
     </View>
   );
 };
@@ -54,14 +73,23 @@ const styles = StyleSheet.create({
     flex: 1,
   },
   map: {
-    flex: 1.1,
+    flexGrow: 1.1,
+    flexShrink: 1,
+    flexBasis: 0,
   },
   panel: {
-    flex: 1,
     marginTop: -CARD_BORDER_RADIUS,
     borderTopLeftRadius: CARD_BORDER_RADIUS,
     borderTopRightRadius: CARD_BORDER_RADIUS,
     borderTopWidth: StyleSheet.hairlineWidth,
     overflow: 'hidden',
+  },
+  panelWithList: {
+    flexGrow: 1,
+    flexShrink: 1,
+    flexBasis: 0,
+  },
+  hidden: {
+    display: 'none',
   },
 });

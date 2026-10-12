@@ -14,6 +14,7 @@ export {
   estimateWalkMinutes,
   formatDistance,
   formatDuration,
+  formatRadius,
   lineBounds,
   snapToGrid,
 } from './geo';

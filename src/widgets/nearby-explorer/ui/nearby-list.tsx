@@ -3,7 +3,8 @@ import { JSX, useCallback, useEffect, useRef } from 'react';
 import { useUnit } from 'effector-react';
 import { useTheme } from '@app/shared/theme';
 import { Button, ErrorMessage, Skeleton } from '@app/shared/ui';
-import { pluralize } from '@app/shared/lib';
+import { NEARBY_RADIUS_OPTIONS_M } from '@app/shared/config';
+import { formatRadius, pluralize } from '@app/shared/lib';
 import { PLACE_KIND_LABELS, PlaceRow } from '@app/entities/place';
 import { nearbyModel } from '@app/features/nearby-places';
 import { explorerModel } from '../model/explorer-model';
@@ -64,6 +65,8 @@ export const NearbyList = (): JSX.Element => {
     activeKind,
     kindCounts,
     kindChanged,
+    radius,
+    radiusChanged,
   } = useUnit({
     places: nearbyModel.$visiblePlaces,
     selectedId: nearbyModel.$selectedId,
@@ -80,6 +83,8 @@ export const NearbyList = (): JSX.Element => {
     activeKind: nearbyModel.$kind,
     kindCounts: nearbyModel.$kindCounts,
     kindChanged: nearbyModel.kindChanged,
+    radius: nearbyModel.$radius,
+    radiusChanged: nearbyModel.radiusChanged,
   });
   const kinds = KINDS.filter((item) => (kindCounts[item] ?? 0) > 0);
   const listRef = useRef<FlatList<Place>>(null);
@@ -100,7 +105,9 @@ export const NearbyList = (): JSX.Element => {
     listRef.current?.scrollToOffset({ offset: averageItemLength * index, animated: true });
   }, []);
 
-  const title = places.length > 0 ? `${pluralize(places.length, PLACE_FORMS)} в радиусе 5 км` : 'Места рядом';
+  const radiusLabel = formatRadius(radius);
+  const nextRadius = NEARBY_RADIUS_OPTIONS_M.find((option) => option > radius);
+  const title = places.length > 0 ? `${pluralize(places.length, PLACE_FORMS)} в радиусе ${radiusLabel}` : 'Места рядом';
 
   return (
     <View style={styles.container}>
@@ -133,7 +140,7 @@ export const NearbyList = (): JSX.Element => {
         )}
         {isSightsLoading && (
           <Text style={[styles.status, { color: colors.textSecondary }]}>
-            Ищем известные места рядом. В новом районе первый поиск занимает до 20 секунд
+            Ищем известные места рядом. В новом районе первый поиск занимает до 30 секунд
           </Text>
         )}
         {!isSightsLoading && sightsError && (
@@ -165,9 +172,18 @@ export const NearbyList = (): JSX.Element => {
       )}
 
       {!error && places.length === 0 && !isNearestLoading && !isSightsLoading && (
-        <Text style={[styles.empty, { color: colors.textSecondary }]}>
-          В радиусе 5 км не нашлось достопримечательностей со статьёй в Википедии
-        </Text>
+        <View style={styles.message}>
+          <Text style={[styles.empty, { color: colors.textSecondary }]}>
+            {`В радиусе ${radiusLabel} не нашлось достопримечательностей со статьёй в Википедии`}
+          </Text>
+          {nextRadius && (
+            <Button
+              label={`Искать в радиусе ${formatRadius(nextRadius)}`}
+              variant="outline"
+              onPress={() => radiusChanged(nextRadius)}
+            />
+          )}
+        </View>
       )}
 
       {places.length > 0 && (
@@ -253,7 +269,6 @@ const styles = StyleSheet.create({
     gap: 8,
   },
   empty: {
-    padding: 16,
     fontSize: 15,
   },
   attribution: {

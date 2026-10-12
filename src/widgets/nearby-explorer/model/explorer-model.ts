@@ -89,6 +89,11 @@ const positionUpdated = sample({
 
 sample({
   clock: explorerOpened,
+  target: nearbyModel.radiusRestored,
+});
+
+sample({
+  clock: explorerOpened,
   source: locationModel.$position,
   filter: (position) => position === null,
   target: locationModel.locationRequested,

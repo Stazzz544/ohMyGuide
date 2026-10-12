@@ -1,6 +1,12 @@
 import { combine, createEffect, createEvent, createStore, sample } from 'effector';
 import { fetchWikiNearbyApi, fetchWikidataSightsApi, getErrorMessage } from '@app/shared/api';
-import { NEARBY_CACHE_TTL_MS, NEARBY_RADIUS_M, STORAGE_KEYS } from '@app/shared/config';
+import {
+  NEARBY_CACHE_TTL_MS,
+  NEARBY_DEFAULT_RADIUS_M,
+  NEARBY_RADIUS_M,
+  NEARBY_RADIUS_OPTIONS_M,
+  STORAGE_KEYS,
+} from '@app/shared/config';
 import { snapToGrid, storage } from '@app/shared/lib';
 import { buildPlaces } from '@app/entities/place';
 
@@ -53,6 +59,15 @@ const saveCachedSightsFx = createEffect(async ({ cell, sights }: CachedSights): 
   );
 });
 
+const loadRadiusFx = createEffect(async (): Promise<number> => {
+  const radius = await storage.get<number>(STORAGE_KEYS.NEARBY_RADIUS);
+  return NEARBY_RADIUS_OPTIONS_M.find((option) => option === radius) ?? NEARBY_DEFAULT_RADIUS_M;
+});
+
+const saveRadiusFx = createEffect(async (radius: number): Promise<void> => {
+  await storage.set(STORAGE_KEYS.NEARBY_RADIUS, radius);
+});
+
 const fetchSightsFx = createEffect((cell: Cell) => fetchWikidataSightsApi(cell.center));
 const fetchNearestFx = createEffect((origin: GeoPoint) => fetchWikiNearbyApi(origin, NEARBY_RADIUS_M));
 
@@ -62,6 +77,7 @@ const $cell = createStore<Cell | null>(null);
 const $sights = createStore<WikidataSight[]>([]);
 const $nearest = createStore<WikiNearbyPage[]>([]);
 const $sort = createStore<PlaceSort>('distance');
+const $radius = createStore<number>(NEARBY_DEFAULT_RADIUS_M);
 const $kind = createStore<PlaceKindFilter>('all');
 const $selectedId = createStore<string | null>(null);
 const $error = createStore<string | null>(null);
@@ -77,13 +93,18 @@ const searchRequested = createEvent<GeoPoint>();
 const positionChanged = createEvent<GeoPoint>();
 const retried = createEvent();
 const sortChanged = createEvent<PlaceSort>();
+const radiusChanged = createEvent<number>();
+const radiusRestored = createEvent();
 const kindChanged = createEvent<PlaceKindFilter>();
 const placeSelected = createEvent<string>();
 const selectionCleared = createEvent();
 
-// Расстояния считаем от текущей позиции, а не от точки поиска: при ходьбе новый поиск идёт раз в 300 м
-const $places = combine($position, $sights, $nearest, $sort, (position, sights, nearest, sort) =>
-  position ? buildPlaces({ origin: position, radiusM: NEARBY_RADIUS_M, sights, nearest, sort }) : [],
+// Расстояния считаем от текущей позиции, а не от точки поиска: при ходьбе новый поиск идёт раз в 300 м.
+// Запрашиваем всегда максимальный радиус, а выбранный применяем фильтром — без новых запросов
+const $places = combine(
+  { position: $position, sights: $sights, nearest: $nearest, sort: $sort, radius: $radius },
+  ({ position, sights, nearest, sort, radius }) =>
+    position ? buildPlaces({ origin: position, radiusM: radius, sights, nearest, sort }) : [],
 );
 const $selectedPlace = combine(
   $places,
@@ -228,6 +249,21 @@ sample({
 });
 
 sample({
+  clock: radiusRestored,
+  target: loadRadiusFx,
+});
+
+sample({
+  clock: loadRadiusFx.doneData,
+  target: $radius,
+});
+
+sample({
+  clock: radiusChanged,
+  target: [$radius, saveRadiusFx],
+});
+
+sample({
   clock: kindChanged,
   target: $kind,
 });
@@ -269,6 +305,7 @@ export const nearbyModel = {
   $selectedId,
   $selectedPlace,
   $sort,
+  $radius,
   $error,
   $sightsError,
   $isNearestLoading,
@@ -277,6 +314,8 @@ export const nearbyModel = {
   positionChanged,
   retried,
   sortChanged,
+  radiusChanged,
+  radiusRestored,
   kindChanged,
   placeSelected,
   selectionCleared,

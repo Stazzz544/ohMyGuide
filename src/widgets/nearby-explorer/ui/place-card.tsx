@@ -68,7 +68,7 @@ export const PlaceCard = (): JSX.Element | null => {
             <Text style={[styles.link, { color: colors.primary }]}>Статья в Википедии</Text>
           </Pressable>
         </View>
-        <Pressable onPress={selectionCleared} hitSlop={10} accessibilityRole="button" accessibilityLabel="Закрыть">
+        <Pressable onPress={selectionCleared} hitSlop={10} accessibilityRole="button" accessibilityLabel="Вернуться к списку">
           <Ionicons name="close" size={24} color={colors.textSecondary} />
         </Pressable>
       </View>

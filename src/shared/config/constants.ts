@@ -23,11 +23,14 @@ export const STORAGE_KEYS = {
   THEME_OVERRIDE: 'ohmyguide_theme',
   AI_MODEL: 'ohmyguide_ai_model',
   AI_API_KEY: 'ohmyguide_ai_api_key',
-  NEARBY_SIGHTS_CACHE: 'ohmyguide_nearby_sights',
+  NEARBY_SIGHTS_CACHE: 'ohmyguide_nearby_sights_v2',
+  NEARBY_RADIUS: 'ohmyguide_nearby_radius',
 } as const;
 
 // Раздел «Рядом»
 export const NEARBY_RADIUS_M = 5000;
+export const NEARBY_RADIUS_OPTIONS_M = [500, 1000, 2000, 5000] as const;
+export const NEARBY_DEFAULT_RADIUS_M = 5000;
 export const NEARBY_CACHE_TTL_MS = 30 * 24 * 60 * 60 * 1000;
 export const MAP_STYLE_URL = {
   light: 'https://tiles.openfreemap.org/styles/liberty',

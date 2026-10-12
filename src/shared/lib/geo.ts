@@ -64,6 +64,9 @@ export const formatDistance = (meters: number): string => {
   return `${(meters / 1000).toFixed(1).replace('.', ',')} км`;
 };
 
+export const formatRadius = (meters: number): string =>
+  meters < 1000 ? `${meters} м` : `${String(meters / 1000).replace('.', ',')} км`;
+
 export const estimateWalkMinutes = (meters: number): number =>
   Math.max(1, Math.round((meters * WALK_DETOUR_FACTOR) / WALK_SPEED_MPS / 60));
 

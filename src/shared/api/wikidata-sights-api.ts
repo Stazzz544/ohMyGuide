@@ -53,7 +53,7 @@ const buildSightsQuery = ({ lat, lon }: GeoPoint): string => `SELECT ?item ?item
   SERVICE wikibase:label { bd:serviceParam wikibase:language "ru". }
 }
 ORDER BY DESC(?sitelinks)
-LIMIT 60`;
+LIMIT 200`;
 
 const toSight = (row: SparqlRow): WikidataSight => {
   const label = row.itemLabel?.value;

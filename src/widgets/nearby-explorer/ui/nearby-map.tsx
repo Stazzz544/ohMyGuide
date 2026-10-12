@@ -3,7 +3,7 @@ import { JSX, useCallback, useMemo } from 'react';
 import { useUnit } from 'effector-react';
 import { Camera, GeoJSONSource, Layer, Map as MapLibreMap } from '@maplibre/maplibre-react-native';
 import { useTheme } from '@app/shared/theme';
-import { CARD_BORDER_RADIUS, NEARBY_RADIUS_M } from '@app/shared/config';
+import { CARD_BORDER_RADIUS } from '@app/shared/config';
 import { circleBounds, circlePolygon, lineBounds } from '@app/shared/lib';
 import { locationModel } from '@app/features/user-location';
 import { nearbyModel } from '@app/features/nearby-places';
@@ -27,8 +27,9 @@ const EMPTY_COLLECTION: GeoJSON.FeatureCollection = {
 
 export const NearbyMap = (): JSX.Element => {
   const { colors, scheme } = useTheme();
-  const { origin, position, places, selectedPlace, selectedId, route, mapStyles, placeSelected } = useUnit({
+  const { origin, position, radius, places, selectedPlace, selectedId, route, mapStyles, placeSelected } = useUnit({
     origin: nearbyModel.$origin,
+    radius: nearbyModel.$radius,
     position: locationModel.$position,
     places: nearbyModel.$visiblePlaces,
     selectedPlace: nearbyModel.$selectedPlace,
@@ -40,7 +41,13 @@ export const NearbyMap = (): JSX.Element => {
 
   const mapStyle = mapStyles[scheme];
 
-  const radiusData = useMemo(() => (origin ? circlePolygon(origin, NEARBY_RADIUS_M) : EMPTY_COLLECTION), [origin]);
+  // Расстояния в списке считаются от текущей позиции, поэтому и круг рисуем от неё
+  const center = position ?? origin;
+
+  const radiusData = useMemo(
+    () => (center ? circlePolygon(center, radius) : EMPTY_COLLECTION),
+    [center, radius],
+  );
 
   const placesData = useMemo(
     (): GeoJSON.FeatureCollection<GeoJSON.Point> => ({
@@ -88,16 +95,16 @@ export const NearbyMap = (): JSX.Element => {
         easing: 'ease',
       };
     }
-    if (origin) {
+    if (center) {
       return {
-        bounds: circleBounds(origin, NEARBY_RADIUS_M),
+        bounds: circleBounds(center, radius),
         padding: CAMERA_PADDING,
         duration: CAMERA_DURATION_MS,
         easing: 'ease',
       };
     }
     return null;
-  }, [route, position, selectedPlace, origin]);
+  }, [route, position, selectedPlace, center, radius]);
 
   const handlePlacePress = useCallback(
     (event: NativeSyntheticEvent<PressEventWithFeatures>) => {

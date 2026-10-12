@@ -15,6 +15,24 @@ const calcWordIntervalMs = (sentenceText: string, wordCount: number, speechRate:
   return estimatedDurationMs / wordCount;
 };
 
+type QueueRequest = {
+  sentences: string[];
+  startIndex: number;
+  rate: number;
+  voice?: string;
+  generation: number;
+};
+
+type QueueEvent = {
+  index: number;
+  generation: number;
+};
+
+type PlayPosition = {
+  sentenceIndex: number;
+  wordIndex: number;
+};
+
 // --- Events ---
 
 const playPressed = createEvent<string>();
@@ -23,53 +41,36 @@ const rateChanged = createEvent<number>();
 const voiceSelected = createEvent<string>();
 const seekToWord = createEvent<number>();
 const wordTimerTicked = createEvent();
-const sentenceStarted = createEvent();
 const textAvailable = createEvent<string>();
 
-const _playStarted = createEvent<{
-  sentenceIndex: number;
-  wordIndex: number;
-  text: string;
-  rate: number;
-  voice?: string;
-}>();
+const queueStartRequested = createEvent<PlayPosition>();
+const playbackStopped = createEvent();
+const queuedSentenceStarted = createEvent<QueueEvent>();
+const queuedSentenceDone = createEvent<QueueEvent>();
+const queueFailed = createEvent<number>();
 
 // --- Effects ---
 
-const speakSentenceFx = createEffect(
-  ({ text, rate, voice }: { text: string; rate: number; voice?: string }): Promise<void> => {
-    return new Promise((resolve, reject) => {
-      speechService.speak({
-        text,
-        rate,
-        voice,
-        onStart: () => sentenceStarted(),
-        onDone: resolve,
-        onError: reject,
-      });
+// Все оставшиеся предложения сразу уходят в очередь синтезатора: он дочитывает их сам, даже когда
+// Android заморозил свёрнутое приложение. Цепочка «следующее предложение по onDone» в фоне обрывалась
+const speakQueueFx = createEffect(({ sentences, startIndex, rate, voice, generation }: QueueRequest): void => {
+  speechService.stop();
+  sentences.slice(startIndex).forEach((text, offset) => {
+    const index = startIndex + offset;
+    speechService.speak({
+      text,
+      rate,
+      voice,
+      onStart: () => queuedSentenceStarted({ index, generation }),
+      onDone: () => queuedSentenceDone({ index, generation }),
+      onError: () => queueFailed(generation),
     });
-  },
-);
+  });
+});
 
 const stopFx = createEffect((): void => {
   speechService.stop();
 });
-
-const seekAndSpeakFx = createEffect(
-  ({ text, rate, voice }: { text: string; rate: number; voice?: string }): Promise<void> => {
-    speechService.stop();
-    return new Promise((resolve, reject) => {
-      speechService.speak({
-        text,
-        rate,
-        voice,
-        onStart: () => sentenceStarted(),
-        onDone: resolve,
-        onError: reject,
-      });
-    });
-  },
-);
 
 const loadVoicesFx = createEffect(async (): Promise<Speech.Voice[]> => {
   return speechService.getRussianVoices();
@@ -99,6 +100,29 @@ const $availableVoices = createStore<Speech.Voice[]>([]);
 const $progress = createStore<number>(0);
 const $textStructure = createStore<TextStructureV2 | null>(null);
 const $wordTimerId = createStore<ReturnType<typeof setInterval> | null>(null);
+// События синтезатора от прошлой очереди (после стопа или перемотки) отбрасываем по номеру очереди
+const $generation = createStore<number>(0);
+
+// События текущей очереди
+const sentenceStarted = sample({
+  clock: queuedSentenceStarted,
+  source: $generation,
+  filter: (generation, event) => event.generation === generation,
+  fn: (_, { index }) => index,
+});
+
+const sentenceDone = sample({
+  clock: queuedSentenceDone,
+  source: $generation,
+  filter: (generation, event) => event.generation === generation,
+  fn: (_, { index }) => index,
+});
+
+const playbackFailed = sample({
+  clock: queueFailed,
+  source: $generation,
+  filter: (generation, failedGeneration) => failedGeneration === generation,
+});
 
 // --- Логика ---
 
@@ -129,34 +153,10 @@ sample({
   clock: textAvailable,
   source: $isSpeaking,
   filter: (isSpeaking) => isSpeaking,
-  target: stopFx,
+  target: playbackStopped,
 });
 
-// Остановить таймер при смене текста
-sample({
-  clock: textAvailable,
-  source: $wordTimerId,
-  filter: (timerId) => timerId !== null,
-  target: stopWordTimerFx,
-});
-
-// 1. Остановить текущую озвучку перед новой
-sample({
-  clock: playPressed,
-  source: $isSpeaking,
-  filter: (isSpeaking) => isSpeaking,
-  target: stopFx,
-});
-
-// Остановить таймер слов перед новым воспроизведением
-sample({
-  clock: playPressed,
-  source: $wordTimerId,
-  filter: (timerId) => timerId !== null,
-  target: stopWordTimerFx,
-});
-
-// 1.1. Fallback: если $textStructure ещё не построен — построить из текста
+// 1. Fallback: если $textStructure ещё не построен — построить из текста
 sample({
   clock: playPressed,
   source: $textStructure,
@@ -165,75 +165,95 @@ sample({
   target: $textStructure,
 });
 
-// 2. Рассчитать позицию старта и запустить воспроизведение
+// 2. Рассчитать позицию старта и запустить очередь
 sample({
   clock: playPressed,
-  source: {
-    structure: $textStructure,
-    currentWordIndex: $currentWordIndex,
-    rate: $speechRate,
-    voice: $selectedVoice,
-  },
+  source: { structure: $textStructure, currentWordIndex: $currentWordIndex },
   filter: ({ structure }) => structure !== null && structure.allSentences.length > 0,
-  fn: ({ structure, currentWordIndex, rate, voice }) => {
+  fn: ({ structure, currentWordIndex }): PlayPosition => {
     const idx = structure!.allSentences.findIndex(
       (s) => currentWordIndex >= s.globalWordStart && currentWordIndex <= s.globalWordEnd,
     );
-    const sentenceIndex = idx >= 0 ? idx : 0;
-    const wordIndex = idx >= 0 ? currentWordIndex : 0;
     return {
-      sentenceIndex,
-      wordIndex,
-      text: structure!.allSentences[sentenceIndex].text,
-      rate,
-      voice: voice ?? undefined,
+      sentenceIndex: idx >= 0 ? idx : 0,
+      wordIndex: idx >= 0 ? currentWordIndex : 0,
     };
   },
-  target: _playStarted,
+  target: queueStartRequested,
 });
 
-// 2.1. Обновить индексы из рассчитанной позиции
+// 3. Запуск очереди с позиции: play, перемотка, смена скорости или голоса во время чтения
 sample({
-  clock: _playStarted,
+  clock: queueStartRequested,
   fn: ({ sentenceIndex }) => sentenceIndex,
   target: $currentSentenceIndex,
 });
 
 sample({
-  clock: _playStarted,
+  clock: queueStartRequested,
   fn: ({ wordIndex }) => wordIndex,
   target: $currentWordIndex,
 });
 
-// 2.2. Запустить озвучку
 sample({
-  clock: _playStarted,
-  fn: ({ text, rate, voice }) => ({ text, rate, voice }),
-  target: speakSentenceFx,
+  clock: queueStartRequested,
+  source: $wordTimerId,
+  target: stopWordTimerFx,
 });
 
-// 4. Запустить таймер ТОЛЬКО когда TTS реально начал говорить (onStart)
+// Номер новой очереди считаем один раз: два sample на одном clock, читающие и пишущие $generation, разъедутся
+const queueRequested = sample({
+  clock: queueStartRequested,
+  source: { sentences: $sentences, rate: $speechRate, voice: $selectedVoice, generation: $generation },
+  fn: ({ sentences, rate, voice, generation }, { sentenceIndex }): QueueRequest => ({
+    sentences,
+    startIndex: sentenceIndex,
+    rate,
+    voice: voice ?? undefined,
+    generation: generation + 1,
+  }),
+});
+
 sample({
+  clock: queueRequested,
+  fn: ({ generation }) => generation,
+  target: $generation,
+});
+
+sample({
+  clock: queueRequested,
+  target: speakQueueFx,
+});
+
+sample({
+  clock: queueStartRequested,
+  fn: () => true,
+  target: $isSpeaking,
+});
+
+// 4. Синтезатор начал предложение — подсветка и таймер слов (таймер стартует только по реальному onStart)
+// Слово берём из начала предложения, кроме стартового: при продолжении подсветка остаётся на месте
+const sentencePositioned = sample({
   clock: sentenceStarted,
-  source: {
-    structure: $textStructure,
-    sentenceIndex: $currentSentenceIndex,
-    rate: $speechRate,
-    timerId: $wordTimerId,
-  },
-  filter: ({ structure }) => structure !== null,
-  fn: ({ structure, sentenceIndex, rate }) => {
-    const sentence = structure!.allSentences[sentenceIndex];
-    const intervalMs = calcWordIntervalMs(sentence.text, sentence.wordCount, rate);
-    return {
-      intervalMs,
-      onTick: () => wordTimerTicked(),
-    };
-  },
-  target: startWordTimerFx,
+  source: { structure: $textStructure, sentenceIndex: $currentSentenceIndex, wordIndex: $currentWordIndex },
+  fn: ({ structure, sentenceIndex, wordIndex }, index): PlayPosition => ({
+    sentenceIndex: index,
+    wordIndex: index === sentenceIndex ? wordIndex : (structure?.allSentences[index]?.globalWordStart ?? wordIndex),
+  }),
 });
 
-// 4.0. Остановить старый таймер перед запуском нового
+sample({
+  clock: sentencePositioned,
+  fn: ({ wordIndex }) => wordIndex,
+  target: $currentWordIndex,
+});
+
+sample({
+  clock: sentencePositioned,
+  fn: ({ sentenceIndex }) => sentenceIndex,
+  target: $currentSentenceIndex,
+});
+
 sample({
   clock: sentenceStarted,
   source: $wordTimerId,
@@ -241,7 +261,20 @@ sample({
   target: stopWordTimerFx,
 });
 
-// 4.1. Сохранить timerId
+sample({
+  clock: sentenceStarted,
+  source: { structure: $textStructure, rate: $speechRate },
+  filter: ({ structure }, index) => structure?.allSentences[index] !== undefined,
+  fn: ({ structure, rate }, index) => {
+    const sentence = structure!.allSentences[index];
+    return {
+      intervalMs: calcWordIntervalMs(sentence.text, sentence.wordCount, rate),
+      onTick: () => wordTimerTicked(),
+    };
+  },
+  target: startWordTimerFx,
+});
+
 sample({
   clock: startWordTimerFx.doneData,
   target: $wordTimerId,
@@ -269,74 +302,51 @@ sample({
   target: $currentWordIndex,
 });
 
-// 6. При завершении предложения — остановить таймер
+// 6. Синтезатор закончил предложение — остановить таймер и поправить дрейф подсветки
 sample({
-  clock: speakSentenceFx.done,
+  clock: sentenceDone,
   source: $wordTimerId,
   filter: (timerId) => timerId !== null,
   target: stopWordTimerFx,
 });
 
-// 6.1. Коррекция дрейфа: зафиксировать $currentWordIndex на конце предложения
 sample({
-  clock: speakSentenceFx.done,
-  source: {
-    structure: $textStructure,
-    sentenceIndex: $currentSentenceIndex,
-  },
-  filter: ({ structure }) => structure !== null,
-  fn: ({ structure, sentenceIndex }) => {
-    const sentence = structure!.allSentences[sentenceIndex];
-    return (sentence?.globalWordEnd ?? 0) + 1;
-  },
+  clock: sentenceDone,
+  source: $textStructure,
+  filter: (structure) => structure !== null,
+  fn: (structure, index) => (structure!.allSentences[index]?.globalWordEnd ?? 0) + 1,
   target: $currentWordIndex,
 });
 
-// 7. При завершении предложения — воспроизвести следующее
-sample({
-  clock: speakSentenceFx.done,
-  source: {
-    sentences: $sentences,
-    index: $currentSentenceIndex,
-    rate: $speechRate,
-    voice: $selectedVoice,
-  },
-  filter: ({ sentences, index }) => index + 1 < sentences.length,
-  fn: ({ sentences, index, rate, voice }) => ({
-    text: sentences[index + 1],
-    rate,
-    voice: voice ?? undefined,
-  }),
-  target: speakSentenceFx,
+// 7. Последнее предложение дочитано — сбросить состояние
+const queueFinished = sample({
+  clock: sentenceDone,
+  source: $sentences,
+  filter: (sentences, index) => index + 1 >= sentences.length,
 });
 
-// 7.1. Обновить индекс предложения
 sample({
-  clock: speakSentenceFx.done,
-  source: $currentSentenceIndex,
-  fn: (index) => index + 1,
-  target: $currentSentenceIndex,
+  clock: queueFinished,
+  fn: () => false,
+  target: $isSpeaking,
+});
+
+sample({
+  clock: queueFinished,
+  fn: () => 0,
+  target: [$progress, $currentWordIndex],
+});
+
+sample({
+  clock: queueFinished,
+  fn: () => null,
+  target: $wordTimerId,
 });
 
 // 8. Остановка
 sample({
   clock: stopPressed,
-  target: stopFx,
-});
-
-// 8.1. Остановить таймер при остановке
-sample({
-  clock: stopPressed,
-  source: $wordTimerId,
-  filter: (timerId) => timerId !== null,
-  target: stopWordTimerFx,
-});
-
-// 8.2. Сбросить состояние при остановке (НЕ очищаем $textStructure)
-sample({
-  clock: stopPressed,
-  fn: () => null,
-  target: $wordTimerId,
+  target: playbackStopped,
 });
 
 sample({
@@ -345,43 +355,35 @@ sample({
   target: [$currentSentenceIndex, $currentWordIndex],
 });
 
-// 9. Состояние "говорит"
 sample({
-  clock: speakSentenceFx,
-  fn: () => true,
-  target: $isSpeaking,
+  clock: playbackStopped,
+  target: stopFx,
 });
 
 sample({
-  clock: [speakSentenceFx.done, speakSentenceFx.fail],
-  source: { sentences: $sentences, index: $currentSentenceIndex },
-  filter: ({ sentences, index }) => index + 1 >= sentences.length,
-  fn: () => false,
-  target: $isSpeaking,
+  clock: playbackStopped,
+  source: $generation,
+  fn: (generation) => generation + 1,
+  target: $generation,
 });
 
 sample({
-  clock: stopFx.done,
-  fn: () => false,
-  target: $isSpeaking,
-});
-
-// 10. Сбросить прогресс при завершении всех предложений
-sample({
-  clock: [speakSentenceFx.done, speakSentenceFx.fail],
-  source: { sentences: $sentences, index: $currentSentenceIndex },
-  filter: ({ sentences, index }) => index + 1 >= sentences.length,
-  fn: () => 0,
-  target: [$progress, $currentWordIndex],
-});
-
-// Остановить таймер при завершении всех предложений
-sample({
-  clock: [speakSentenceFx.done, speakSentenceFx.fail],
-  source: { sentences: $sentences, index: $currentSentenceIndex, timerId: $wordTimerId },
-  filter: ({ sentences, index, timerId }) => index + 1 >= sentences.length && timerId !== null,
-  fn: ({ timerId }) => timerId,
+  clock: [playbackStopped, playbackFailed],
+  source: $wordTimerId,
+  filter: (timerId) => timerId !== null,
   target: stopWordTimerFx,
+});
+
+sample({
+  clock: [playbackStopped, playbackFailed],
+  fn: () => null,
+  target: $wordTimerId,
+});
+
+sample({
+  clock: [playbackStopped, playbackFailed],
+  fn: () => false,
+  target: $isSpeaking,
 });
 
 sample({
@@ -390,179 +392,70 @@ sample({
   target: $progress,
 });
 
-// 11. Скорость речи
+// 9. Скорость и голос: меняются сразу — очередь перезапускается с текущего предложения
 sample({
   clock: rateChanged,
   filter: (rate) => rate >= MIN_SPEECH_RATE && rate <= MAX_SPEECH_RATE,
   target: $speechRate,
 });
 
-// 12. Загрузка голосов
-sample({
-  clock: loadVoicesFx.doneData,
-  target: $availableVoices,
-});
-
-// 13. Выбор голоса
 sample({
   clock: voiceSelected,
   target: $selectedVoice,
 });
 
-// 14. Seek к слову
-
-// 14.0. Остановить таймер при seek
 sample({
-  clock: seekToWord,
-  source: $wordTimerId,
-  filter: (timerId) => timerId !== null,
-  target: stopWordTimerFx,
+  clock: [$speechRate.updates, $selectedVoice.updates],
+  source: { isSpeaking: $isSpeaking, sentenceIndex: $currentSentenceIndex, wordIndex: $currentWordIndex },
+  filter: ({ isSpeaking }) => isSpeaking,
+  fn: ({ sentenceIndex, wordIndex }): PlayPosition => ({ sentenceIndex, wordIndex }),
+  target: queueStartRequested,
 });
 
-// 14.1. Обновить $currentWordIndex (общее для обоих путей)
+// 10. Загрузка голосов
 sample({
+  clock: loadVoicesFx.doneData,
+  target: $availableVoices,
+});
+
+// 11. Перемотка к слову
+const seekTargetChosen = sample({
   clock: seekToWord,
   source: $textStructure,
-  filter: (structure, wordIndex) => {
-    if (!structure) {
-      return false;
-    }
-    return wordIndex >= 0 && wordIndex < structure.totalWordCount;
-  },
-  fn: (_, wordIndex) => wordIndex,
-  target: $currentWordIndex,
-});
-
-// Путь A: seek во время воспроизведения — перезапустить озвучку с нового места
-sample({
-  clock: seekToWord,
-  source: {
-    structure: $textStructure,
-    isSpeaking: $isSpeaking,
-    sentences: $sentences,
-    rate: $speechRate,
-    voice: $selectedVoice,
-  },
-  filter: ({ structure, isSpeaking }, wordIndex) =>
-    isSpeaking && structure !== null && wordIndex >= 0 && wordIndex < structure.totalWordCount,
-  fn: ({ structure, sentences, rate, voice }, wordIndex) => {
-    const wordInfo = structure!.allWords[wordIndex];
-    return {
-      text: sentences[wordInfo.sentenceIndex],
-      rate,
-      voice: voice ?? undefined,
-    };
-  },
-  target: seekAndSpeakFx,
-});
-
-// Путь A: обновить sentenceIndex при seek во время воспроизведения
-sample({
-  clock: seekToWord,
-  source: { structure: $textStructure, isSpeaking: $isSpeaking },
-  filter: ({ structure, isSpeaking }, wordIndex) =>
-    isSpeaking && structure !== null && wordIndex >= 0 && wordIndex < structure.totalWordCount,
-  fn: ({ structure }, wordIndex) => structure!.allWords[wordIndex].sentenceIndex,
-  target: $currentSentenceIndex,
-});
-
-// Путь B: seek когда НЕ играет — только обновить sentenceIndex (без озвучки)
-sample({
-  clock: seekToWord,
-  source: { structure: $textStructure, isSpeaking: $isSpeaking },
-  filter: ({ structure, isSpeaking }, wordIndex) =>
-    !isSpeaking && structure !== null && wordIndex >= 0 && wordIndex < structure.totalWordCount,
-  fn: ({ structure }, wordIndex) => structure!.allWords[wordIndex].sentenceIndex,
-  target: $currentSentenceIndex,
-});
-
-// 14.2. После seek — продолжить обычный поток
-sample({
-  clock: seekAndSpeakFx.done,
-  source: $wordTimerId,
-  filter: (timerId) => timerId !== null,
-  target: stopWordTimerFx,
-});
-
-sample({
-  clock: seekAndSpeakFx.done,
-  source: {
-    structure: $textStructure,
-    sentenceIndex: $currentSentenceIndex,
-  },
-  filter: ({ structure }) => structure !== null,
-  fn: ({ structure, sentenceIndex }) => {
-    const sentence = structure!.allSentences[sentenceIndex];
-    return (sentence?.globalWordEnd ?? 0) + 1;
-  },
-  target: $currentWordIndex,
-});
-
-sample({
-  clock: seekAndSpeakFx.done,
-  source: {
-    sentences: $sentences,
-    index: $currentSentenceIndex,
-    rate: $speechRate,
-    voice: $selectedVoice,
-  },
-  filter: ({ sentences, index }) => index + 1 < sentences.length,
-  fn: ({ sentences, index, rate, voice }) => ({
-    text: sentences[index + 1],
-    rate,
-    voice: voice ?? undefined,
+  filter: (structure, wordIndex) => structure !== null && wordIndex >= 0 && wordIndex < structure.totalWordCount,
+  fn: (structure, wordIndex): PlayPosition => ({
+    sentenceIndex: structure!.allWords[wordIndex].sentenceIndex,
+    wordIndex,
   }),
-  target: speakSentenceFx,
+});
+
+// Во время чтения — перезапустить очередь с предложения, где это слово
+sample({
+  clock: seekTargetChosen,
+  source: $isSpeaking,
+  filter: (isSpeaking) => isSpeaking,
+  fn: (_, position) => position,
+  target: queueStartRequested,
+});
+
+// Без чтения — только сдвинуть позицию, Play продолжит с неё
+sample({
+  clock: seekTargetChosen,
+  source: $isSpeaking,
+  filter: (isSpeaking) => !isSpeaking,
+  fn: (_, { wordIndex }) => wordIndex,
+  target: $currentWordIndex,
 });
 
 sample({
-  clock: seekAndSpeakFx.done,
-  source: $currentSentenceIndex,
-  fn: (index) => index + 1,
+  clock: seekTargetChosen,
+  source: $isSpeaking,
+  filter: (isSpeaking) => !isSpeaking,
+  fn: (_, { sentenceIndex }) => sentenceIndex,
   target: $currentSentenceIndex,
 });
 
-// 14.3. Состояние isSpeaking для seek
-sample({
-  clock: seekAndSpeakFx,
-  fn: () => true,
-  target: $isSpeaking,
-});
-
-sample({
-  clock: [seekAndSpeakFx.done, seekAndSpeakFx.fail],
-  source: { sentences: $sentences, index: $currentSentenceIndex },
-  filter: ({ sentences, index }) => index + 1 >= sentences.length,
-  fn: () => false,
-  target: $isSpeaking,
-});
-
-// 14.4. Сбросить при завершении seek на последнем предложении
-sample({
-  clock: [seekAndSpeakFx.done, seekAndSpeakFx.fail],
-  source: { sentences: $sentences, index: $currentSentenceIndex },
-  filter: ({ sentences, index }) => index + 1 >= sentences.length,
-  fn: () => 0,
-  target: [$progress, $currentWordIndex],
-});
-
-sample({
-  clock: [seekAndSpeakFx.done, seekAndSpeakFx.fail],
-  source: { sentences: $sentences, index: $currentSentenceIndex, timerId: $wordTimerId },
-  filter: ({ sentences, index, timerId }) => index + 1 >= sentences.length && timerId !== null,
-  fn: ({ timerId }) => timerId,
-  target: stopWordTimerFx,
-});
-
-// 14.5. Остановить таймер при ошибке seek
-sample({
-  clock: seekAndSpeakFx.fail,
-  source: $wordTimerId,
-  filter: (timerId) => timerId !== null,
-  target: stopWordTimerFx,
-});
-
-// 15. Вычислить прогресс по словам
+// 12. Вычислить прогресс по словам
 sample({
   clock: $currentWordIndex,
   source: { wordIndex: $currentWordIndex, structure: $textStructure },
@@ -573,14 +466,6 @@ sample({
     return Math.round((wordIndex / structure.totalWordCount) * 100);
   },
   target: $progress,
-});
-
-// 16. Остановить таймер при ошибке воспроизведения
-sample({
-  clock: speakSentenceFx.fail,
-  source: $wordTimerId,
-  filter: (timerId) => timerId !== null,
-  target: stopWordTimerFx,
 });
 
 export const speechModel = {
