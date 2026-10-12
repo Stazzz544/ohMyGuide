@@ -15,6 +15,7 @@ type PlaceRowProps = {
 };
 
 const THUMBNAIL_SIZE = 52;
+const MAX_WALK_ESTIMATE_M = 10000;
 
 export const PlaceRow = ({ place, isSelected, onPress }: PlaceRowProps): JSX.Element => {
   const { colors } = useTheme();
@@ -53,9 +54,11 @@ export const PlaceRow = ({ place, isSelected, onPress }: PlaceRowProps): JSX.Ele
       </View>
       <View style={styles.distance}>
         <Text style={[styles.distanceValue, { color: colors.textPrimary }]}>{formatDistance(place.distanceM)}</Text>
-        <Text style={[styles.walk, { color: colors.textSecondary }]}>
-          {`≈ ${estimateWalkMinutes(place.distanceM)} мин`}
-        </Text>
+        {place.distanceM <= MAX_WALK_ESTIMATE_M && (
+          <Text style={[styles.walk, { color: colors.textSecondary }]}>
+            {`≈ ${estimateWalkMinutes(place.distanceM)} мин`}
+          </Text>
+        )}
       </View>
     </Pressable>
   );

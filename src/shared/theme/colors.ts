@@ -33,6 +33,8 @@ export type ThemeColors = {
   placeholder: string;
   // Карта
   mapPin: string;
+  favoriteDefault: string;
+  favoriteStroke: string;
 };
 
 export const lightColors: ThemeColors = {
@@ -57,6 +59,8 @@ export const lightColors: ThemeColors = {
   inputBorder: '#d9d9e1',
   placeholder: '#a0a0b0',
   mapPin: '#d4442c',
+  favoriteDefault: '#f5c518',
+  favoriteStroke: '#d4442c',
 };
 
 export const darkColors: ThemeColors = {
@@ -81,4 +85,6 @@ export const darkColors: ThemeColors = {
   inputBorder: '#2a2a40',
   placeholder: '#6a6a80',
   mapPin: '#f27b63',
+  favoriteDefault: '#f7cf3d',
+  favoriteStroke: '#f05a45',
 };

@@ -71,7 +71,8 @@ export const apiClient = {
       if (error && typeof error === 'object' && 'message' in error && 'status' in error) {
         throw error; // Уже ApiError
       }
-      if (error instanceof DOMException && error.name === 'AbortError') {
+      // В Hermes нет DOMException: instanceof по нему бросает ReferenceError вместо сетевой ошибки
+      if (error instanceof Error && error.name === 'AbortError') {
         throw {
           message: 'Превышено время ожидания ответа от сервера',
           code: 'TIMEOUT',

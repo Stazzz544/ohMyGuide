@@ -21,7 +21,16 @@ export const isModelUnavailableError = (error: unknown): boolean => {
   return status === 404 || MODEL_UNAVAILABLE_CODES.includes(code ?? '');
 };
 
+// Groq закрыт для части стран: отвечает 403 или соединение рвётся на уровне сети
+const REGION_BLOCK_PATTERN = /region|country|territor|forbidden/i;
+
 const getGroqErrorMessage = (error: ApiError): string => {
+  if (error.status === 403 || REGION_BLOCK_PATTERN.test(error.message ?? '')) {
+    return 'Groq недоступен из вашего региона. Попробуйте включить VPN и повторить';
+  }
+  if (error.code === 'NETWORK_ERROR' || error.code === 'TIMEOUT') {
+    return 'Не удалось подключиться к Groq. Если интернет работает, сервис может быть заблокирован в вашем регионе — попробуйте VPN';
+  }
   if (error.status === 401) {
     return 'Неверный API-ключ Groq. Проверьте ключ в настройках';
   }

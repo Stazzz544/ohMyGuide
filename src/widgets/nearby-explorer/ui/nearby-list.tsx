@@ -11,16 +11,72 @@ import { explorerModel } from '../model/explorer-model';
 
 import type { ListRenderItem } from 'react-native';
 import type { Place, PlaceKind, PlaceSort } from '@app/entities/place';
+import type { SearchMode } from '@app/features/nearby-places';
 
 const PLACE_FORMS = { one: 'место', few: 'места', many: 'мест' };
 const SKELETON_ROWS = 5;
 const KINDS = Object.keys(PLACE_KIND_LABELS) as PlaceKind[];
-const ATTRIBUTION = 'Места: Wikidata и Википедия · фото: Wikimedia Commons · маршруты: OSRM · карта: OpenFreeMap, © OpenStreetMap';
+const ATTRIBUTION =
+  'Места: Wikidata и Википедия · фото: Wikimedia Commons · маршруты: OSRM · карта: OpenFreeMap, © OpenStreetMap';
 
 const SORT_OPTIONS: Array<{ value: PlaceSort; label: string }> = [
   { value: 'distance', label: 'Ближе' },
   { value: 'fame', label: 'Известнее' },
 ];
+
+type AreaState = {
+  searchMode: SearchMode;
+  isSightsLoading: boolean;
+  sightsError: string | null;
+  isCityLoading: boolean;
+  cityError: string | null;
+  isFreeLoading: boolean;
+  isZoomTooFar: boolean;
+  hasFailedTiles: boolean;
+};
+
+const getAreaStatus = (state: AreaState): string | null => {
+  if (state.searchMode === 'city') {
+    if (state.isCityLoading) {
+      return 'Ищем места по всему городу. Первый поиск по большому городу занимает до минуты';
+    }
+    return state.cityError;
+  }
+  if (state.searchMode === 'free') {
+    if (state.isZoomTooFar) {
+      return 'Приблизьте карту, чтобы загрузить места в кадре';
+    }
+    if (state.isFreeLoading) {
+      return 'Загружаем места в кадре';
+    }
+    return state.hasFailedTiles ? 'Wikidata ответила не по всему кадру — сдвиньте карту, чтобы повторить' : null;
+  }
+  if (state.isSightsLoading) {
+    return 'Ищем известные места рядом. В новом районе первый поиск занимает до 30 секунд';
+  }
+  return state.sightsError ? 'Wikidata не ответила, показаны ближайшие статьи Википедии' : null;
+};
+
+const getTitle = (searchMode: SearchMode, count: number, radius: number, cityName: string | null): string => {
+  const places = pluralize(count, PLACE_FORMS);
+  if (searchMode === 'city') {
+    return count > 0 && cityName ? `${places} · ${cityName}` : (cityName ?? 'Весь город');
+  }
+  if (searchMode === 'free') {
+    return count > 0 ? `${places} в кадре` : 'Места на карте';
+  }
+  return count > 0 ? `${places} в радиусе ${formatRadius(radius)}` : 'Места рядом';
+};
+
+const getEmptyText = (searchMode: SearchMode, radius: number): string => {
+  if (searchMode === 'city') {
+    return 'В границах города не нашлось достопримечательностей со статьёй в Википедии';
+  }
+  if (searchMode === 'free') {
+    return 'В этой части карты не нашлось достопримечательностей — сдвиньте карту или отдалите её';
+  }
+  return `В радиусе ${formatRadius(radius)} не нашлось достопримечательностей со статьёй в Википедии`;
+};
 
 type ChipProps = {
   label: string;
@@ -67,6 +123,13 @@ export const NearbyList = (): JSX.Element => {
     kindChanged,
     radius,
     radiusChanged,
+    searchMode,
+    city,
+    cityError,
+    isCityLoading,
+    isFreeLoading,
+    isZoomTooFar,
+    hasFailedTiles,
   } = useUnit({
     places: nearbyModel.$visiblePlaces,
     selectedId: nearbyModel.$selectedId,
@@ -85,6 +148,13 @@ export const NearbyList = (): JSX.Element => {
     kindChanged: nearbyModel.kindChanged,
     radius: nearbyModel.$radius,
     radiusChanged: nearbyModel.radiusChanged,
+    searchMode: nearbyModel.$searchMode,
+    city: nearbyModel.$city,
+    cityError: nearbyModel.$cityError,
+    isCityLoading: nearbyModel.$isCityLoading,
+    isFreeLoading: nearbyModel.$isFreeLoading,
+    isZoomTooFar: nearbyModel.$isZoomTooFar,
+    hasFailedTiles: nearbyModel.$hasFailedTiles,
   });
   const kinds = KINDS.filter((item) => (kindCounts[item] ?? 0) > 0);
   const listRef = useRef<FlatList<Place>>(null);
@@ -101,13 +171,33 @@ export const NearbyList = (): JSX.Element => {
     [selectedId, placeSelected],
   );
 
-  const handleScrollToIndexFailed = useCallback(({ averageItemLength, index }: { averageItemLength: number; index: number }) => {
-    listRef.current?.scrollToOffset({ offset: averageItemLength * index, animated: true });
-  }, []);
+  const handleScrollToIndexFailed = useCallback(
+    ({ averageItemLength, index }: { averageItemLength: number; index: number }) => {
+      listRef.current?.scrollToOffset({ offset: averageItemLength * index, animated: true });
+    },
+    [],
+  );
 
-  const radiusLabel = formatRadius(radius);
-  const nextRadius = NEARBY_RADIUS_OPTIONS_M.find((option) => option > radius);
-  const title = places.length > 0 ? `${pluralize(places.length, PLACE_FORMS)} в радиусе ${radiusLabel}` : 'Места рядом';
+  const isRadiusMode = searchMode === 'radius';
+  const nextRadius = isRadiusMode ? NEARBY_RADIUS_OPTIONS_M.find((option) => option > radius) : undefined;
+  const title = getTitle(searchMode, places.length, radius, city?.name ?? null);
+  const status = getAreaStatus({
+    searchMode,
+    isSightsLoading,
+    sightsError,
+    isCityLoading,
+    cityError,
+    isFreeLoading,
+    isZoomTooFar,
+    hasFailedTiles,
+  });
+  const blockingError = isRadiusMode ? error : null;
+  const isLoading =
+    (isRadiusMode && (isNearestLoading || isSightsLoading)) ||
+    (searchMode === 'city' && isCityLoading) ||
+    (searchMode === 'free' && isFreeLoading);
+  const isEmpty = places.length === 0 && !blockingError && !isLoading && !(searchMode === 'free' && isZoomTooFar);
+  const canRetryCity = searchMode === 'city' && cityError !== null && !isCityLoading;
 
   return (
     <View style={styles.container}>
@@ -138,26 +228,17 @@ export const NearbyList = (): JSX.Element => {
             ))}
           </ScrollView>
         )}
-        {isSightsLoading && (
-          <Text style={[styles.status, { color: colors.textSecondary }]}>
-            Ищем известные места рядом. В новом районе первый поиск занимает до 30 секунд
-          </Text>
-        )}
-        {!isSightsLoading && sightsError && (
-          <Text style={[styles.status, { color: colors.textSecondary }]}>
-            Wikidata не ответила, показаны ближайшие статьи Википедии
-          </Text>
-        )}
+        {status && <Text style={[styles.status, { color: colors.textSecondary }]}>{status}</Text>}
       </View>
 
-      {error && places.length === 0 && (
+      {blockingError && places.length === 0 && (
         <View style={styles.message}>
-          <ErrorMessage message={error} />
+          <ErrorMessage message={blockingError} />
           <Button label="Повторить" variant="outline" onPress={retried} />
         </View>
       )}
 
-      {!error && places.length === 0 && (isNearestLoading || isSightsLoading) && (
+      {!blockingError && places.length === 0 && isLoading && (
         <View style={styles.skeletons}>
           {Array.from({ length: SKELETON_ROWS }, (_, index) => (
             <View key={index} style={styles.skeletonRow}>
@@ -171,11 +252,12 @@ export const NearbyList = (): JSX.Element => {
         </View>
       )}
 
-      {!error && places.length === 0 && !isNearestLoading && !isSightsLoading && (
+      {isEmpty && (
         <View style={styles.message}>
-          <Text style={[styles.empty, { color: colors.textSecondary }]}>
-            {`В радиусе ${radiusLabel} не нашлось достопримечательностей со статьёй в Википедии`}
-          </Text>
+          {!canRetryCity && (
+            <Text style={[styles.empty, { color: colors.textSecondary }]}>{getEmptyText(searchMode, radius)}</Text>
+          )}
+          {canRetryCity && <Button label="Повторить" variant="outline" onPress={retried} />}
           {nextRadius && (
             <Button
               label={`Искать в радиусе ${formatRadius(nextRadius)}`}
@@ -194,9 +276,7 @@ export const NearbyList = (): JSX.Element => {
           renderItem={renderItem}
           extraData={selectedId}
           onScrollToIndexFailed={handleScrollToIndexFailed}
-          ListFooterComponent={
-            <Text style={[styles.attribution, { color: colors.textSecondary }]}>{ATTRIBUTION}</Text>
-          }
+          ListFooterComponent={<Text style={[styles.attribution, { color: colors.textSecondary }]}>{ATTRIBUTION}</Text>}
           refreshControl={
             <RefreshControl
               refreshing={isRefreshing}

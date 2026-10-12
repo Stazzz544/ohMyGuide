@@ -1,5 +1,5 @@
 import { Pressable, StyleSheet, Text, View } from 'react-native';
-import { JSX, useCallback } from 'react';
+import { JSX, useCallback, useState } from 'react';
 import { useUnit } from 'effector-react';
 import { router } from 'expo-router';
 import { Ionicons } from '@expo/vector-icons';
@@ -9,7 +9,9 @@ import { BORDER_RADIUS } from '@app/shared/config';
 import { formatDistance, formatDuration } from '@app/shared/lib';
 import { nearbyModel } from '@app/features/nearby-places';
 import { routeModel } from '@app/features/walking-route';
+import { ColorPalette, favoritesStore, resolveFavoriteColor } from '@app/entities/favorite';
 import { explorerModel } from '../model/explorer-model';
+import { FavoriteGroupPicker } from './favorite-group-picker';
 
 const ACTION_SIZE = 48;
 
@@ -28,6 +30,10 @@ export const PlaceCard = (): JSX.Element | null => {
     navigatorOpened,
     isArrived,
     articleOpened,
+    favorites,
+    groups,
+    favoriteToggled,
+    favoriteColorSet,
   } = useUnit({
     place: nearbyModel.$selectedPlace,
     route: routeModel.$route,
@@ -41,7 +47,13 @@ export const PlaceCard = (): JSX.Element | null => {
     navigatorOpened: explorerModel.navigatorOpened,
     isArrived: explorerModel.$isArrived,
     articleOpened: explorerModel.articleOpened,
+    favorites: favoritesStore.$favorites,
+    groups: favoritesStore.$groups,
+    favoriteToggled: favoritesStore.favoriteToggled,
+    favoriteColorSet: favoritesStore.favoriteColorSet,
   });
+  const [isGroupPickerVisible, setGroupPickerVisible] = useState(false);
+  const [isPaletteVisible, setPaletteVisible] = useState(false);
 
   const handleTourPress = useCallback(() => {
     tourRequested();
@@ -51,6 +63,10 @@ export const PlaceCard = (): JSX.Element | null => {
   if (!place) {
     return null;
   }
+
+  const favorite = favorites.find((item) => item.id === place.id) ?? null;
+  const favoriteGroup = groups.find((group) => group.id === favorite?.groupId) ?? null;
+  const groupColor = favoriteGroup?.color ?? colors.favoriteDefault;
 
   return (
     <View style={[styles.card, { borderBottomColor: colors.border }]}>
@@ -68,10 +84,77 @@ export const PlaceCard = (): JSX.Element | null => {
             <Text style={[styles.link, { color: colors.primary }]}>Статья в Википедии</Text>
           </Pressable>
         </View>
-        <Pressable onPress={selectionCleared} hitSlop={10} accessibilityRole="button" accessibilityLabel="Вернуться к списку">
+        <Pressable
+          onPress={() => favoriteToggled(place)}
+          hitSlop={10}
+          accessibilityRole="button"
+          accessibilityLabel={favorite ? 'Убрать из избранного' : 'Добавить в избранное'}
+        >
+          <Ionicons
+            name={favorite ? 'star' : 'star-outline'}
+            size={24}
+            color={favorite ? colors.favoriteDefault : colors.textSecondary}
+          />
+        </Pressable>
+        <Pressable
+          onPress={selectionCleared}
+          hitSlop={10}
+          accessibilityRole="button"
+          accessibilityLabel="Вернуться к списку"
+        >
           <Ionicons name="close" size={24} color={colors.textSecondary} />
         </Pressable>
       </View>
+
+      {favorite && (
+        <View style={styles.favoriteRow}>
+          <Pressable
+            onPress={() => setGroupPickerVisible(true)}
+            accessibilityRole="button"
+            style={[styles.chip, { borderColor: colors.border }]}
+          >
+            <Ionicons name="folder-outline" size={16} color={colors.textSecondary} />
+            <Text style={[styles.chipLabel, { color: colors.textPrimary }]} numberOfLines={1}>
+              {favoriteGroup?.name ?? 'Без группы'}
+            </Text>
+            <Ionicons name="chevron-down" size={14} color={colors.textSecondary} />
+          </Pressable>
+          <Pressable
+            onPress={() => setPaletteVisible((isVisible) => !isVisible)}
+            accessibilityRole="button"
+            accessibilityLabel="Цвет метки"
+            style={[styles.chip, { borderColor: colors.border }]}
+          >
+            <View
+              style={[
+                styles.colorDot,
+                {
+                  backgroundColor: resolveFavoriteColor(favorite, groups, colors.favoriteDefault),
+                  borderColor: colors.favoriteStroke,
+                },
+              ]}
+            />
+            <Text style={[styles.chipLabel, { color: colors.textPrimary }]}>Цвет</Text>
+          </Pressable>
+        </View>
+      )}
+
+      {favorite && isPaletteVisible && (
+        <ColorPalette
+          value={favorite.color}
+          onChange={(color) => favoriteColorSet({ placeId: favorite.id, color })}
+          defaultLabel={favoriteGroup ? 'Как у группы' : 'По умолчанию'}
+          defaultColor={groupColor}
+        />
+      )}
+
+      {favorite && isGroupPickerVisible && (
+        <FavoriteGroupPicker
+          placeId={favorite.id}
+          currentGroupId={favorite.groupId}
+          onClose={() => setGroupPickerVisible(false)}
+        />
+      )}
 
       {route && isArrived && (
         <View style={[styles.route, { backgroundColor: `${colors.success}26` }]}>
@@ -104,9 +187,7 @@ export const PlaceCard = (): JSX.Element | null => {
       {routeError && <Text style={[styles.description, { color: colors.danger }]}>{routeError}</Text>}
 
       <View style={styles.actions}>
-        {!route && (
-          <Button label="Маршрут" onPress={routeRequested} loading={isRouteLoading} style={styles.action} />
-        )}
+        {!route && <Button label="Маршрут" onPress={routeRequested} loading={isRouteLoading} style={styles.action} />}
         <Button
           label="Экскурсия"
           variant={route ? 'fill' : 'outline'}
@@ -118,10 +199,7 @@ export const PlaceCard = (): JSX.Element | null => {
           onPress={navigatorOpened}
           accessibilityRole="button"
           accessibilityLabel="Открыть в навигаторе"
-          style={({ pressed }) => [
-            styles.iconButton,
-            { borderColor: colors.primary, opacity: pressed ? 0.7 : 1 },
-          ]}
+          style={({ pressed }) => [styles.iconButton, { borderColor: colors.primary, opacity: pressed ? 0.7 : 1 }]}
         >
           <Ionicons name="navigate-outline" size={22} color={colors.primary} />
         </Pressable>
@@ -142,6 +220,32 @@ const styles = StyleSheet.create({
     flexDirection: 'row',
     alignItems: 'flex-start',
     gap: 12,
+  },
+  favoriteRow: {
+    flexDirection: 'row',
+    flexWrap: 'wrap',
+    gap: 8,
+  },
+  chip: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: 6,
+    maxWidth: '100%',
+    paddingHorizontal: 12,
+    paddingVertical: 7,
+    borderRadius: 999,
+    borderWidth: 1,
+  },
+  chipLabel: {
+    fontSize: 13,
+    fontWeight: '500',
+    flexShrink: 1,
+  },
+  colorDot: {
+    width: 14,
+    height: 14,
+    borderRadius: 7,
+    borderWidth: 2,
   },
   titleBox: {
     flex: 1,

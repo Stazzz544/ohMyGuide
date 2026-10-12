@@ -15,9 +15,7 @@ const destination = (center: GeoPoint, distance: number, bearing: number): GeoPo
   const angular = distance / EARTH_RADIUS_M;
   const lat1 = center.lat * RAD;
   const lon1 = center.lon * RAD;
-  const lat2 = Math.asin(
-    Math.sin(lat1) * Math.cos(angular) + Math.cos(lat1) * Math.sin(angular) * Math.cos(bearing),
-  );
+  const lat2 = Math.asin(Math.sin(lat1) * Math.cos(angular) + Math.cos(lat1) * Math.sin(angular) * Math.cos(bearing));
   const lon2 =
     lon1 +
     Math.atan2(
@@ -30,9 +28,7 @@ const destination = (center: GeoPoint, distance: number, bearing: number): GeoPo
 export const distanceM = (from: GeoPoint, to: GeoPoint): number => {
   const dLat = (to.lat - from.lat) * RAD;
   const dLon = (to.lon - from.lon) * RAD;
-  const h =
-    Math.sin(dLat / 2) ** 2 +
-    Math.cos(from.lat * RAD) * Math.cos(to.lat * RAD) * Math.sin(dLon / 2) ** 2;
+  const h = Math.sin(dLat / 2) ** 2 + Math.cos(from.lat * RAD) * Math.cos(to.lat * RAD) * Math.sin(dLon / 2) ** 2;
   return 2 * EARTH_RADIUS_M * Math.asin(Math.sqrt(h));
 };
 
@@ -52,6 +48,38 @@ export const circleBounds = (center: GeoPoint, radiusM: number): GeoBounds => {
   return [west.lon, south.lat, east.lon, north.lat];
 };
 
+export const isInBounds = ({ lat, lon }: GeoPoint, [west, south, east, north]: GeoBounds): boolean =>
+  lat >= south && lat <= north && lon >= west && lon <= east;
+
+export const boundsCenter = ([west, south, east, north]: GeoBounds): GeoPoint => ({
+  lat: (south + north) / 2,
+  lon: (west + east) / 2,
+});
+
+export const boundsAreaKm2 = ([west, south, east, north]: GeoBounds): number => {
+  const middleLat = (south + north) / 2;
+  const height = distanceM({ lat: south, lon: west }, { lat: north, lon: west });
+  const width = distanceM({ lat: middleLat, lon: west }, { lat: middleLat, lon: east });
+  return (height * width) / 1e6;
+};
+
+export const boundsPolygon = ([west, south, east, north]: GeoBounds): GeoJSON.Feature<GeoJSON.Polygon> => ({
+  type: 'Feature',
+  properties: {},
+  geometry: {
+    type: 'Polygon',
+    coordinates: [
+      [
+        [west, south],
+        [east, south],
+        [east, north],
+        [west, north],
+        [west, south],
+      ],
+    ],
+  },
+});
+
 export const snapToGrid = (point: GeoPoint, step: number): GeoPoint => ({
   lat: Number((Math.round(point.lat / step) * step).toFixed(4)),
   lon: Number((Math.round(point.lon / step) * step).toFixed(4)),
@@ -60,6 +88,9 @@ export const snapToGrid = (point: GeoPoint, step: number): GeoPoint => ({
 export const formatDistance = (meters: number): string => {
   if (meters < 1000) {
     return `${Math.max(10, Math.round(meters / 10) * 10)} м`;
+  }
+  if (meters >= 10000) {
+    return `${Math.round(meters / 1000)} км`;
   }
   return `${(meters / 1000).toFixed(1).replace('.', ',')} км`;
 };

@@ -1,4 +1,4 @@
-import { Pressable, StyleSheet, Text, View } from 'react-native';
+import { Pressable, ScrollView, StyleSheet, Text, View } from 'react-native';
 import { JSX } from 'react';
 import { useUnit } from 'effector-react';
 import { useTheme } from '@app/shared/theme';
@@ -6,46 +6,87 @@ import { NEARBY_RADIUS_OPTIONS_M } from '@app/shared/config';
 import { formatRadius } from '@app/shared/lib';
 import { nearbyModel } from '@app/features/nearby-places';
 
+import type { SearchMode } from '@app/features/nearby-places';
+
+type SwitchOption = {
+  key: string;
+  label: string;
+  isActive: boolean;
+  onPress: () => void;
+};
+
+const AREA_OPTIONS: Array<{ searchMode: Exclude<SearchMode, 'radius'>; label: string }> = [
+  { searchMode: 'city', label: 'Город' },
+  { searchMode: 'free', label: 'Свободно' },
+];
+
 export const RadiusSwitch = (): JSX.Element => {
   const { colors } = useTheme();
-  const { radius, radiusChanged } = useUnit({
+  const { radius, searchMode, radiusChanged, searchModeChanged } = useUnit({
     radius: nearbyModel.$radius,
+    searchMode: nearbyModel.$searchMode,
     radiusChanged: nearbyModel.radiusChanged,
+    searchModeChanged: nearbyModel.searchModeChanged,
   });
 
-  return (
-    <View
-      style={[styles.container, { backgroundColor: colors.bgCard, borderColor: colors.border }]}
-      accessibilityRole="radiogroup"
-      accessibilityLabel="Радиус поиска"
-    >
-      {NEARBY_RADIUS_OPTIONS_M.map((option) => {
-        const isActive = option === radius;
+  const options: SwitchOption[] = [
+    ...NEARBY_RADIUS_OPTIONS_M.map((option) => ({
+      key: String(option),
+      label: formatRadius(option),
+      isActive: searchMode === 'radius' && option === radius,
+      onPress: () => radiusChanged(option),
+    })),
+    ...AREA_OPTIONS.map((option) => ({
+      key: option.searchMode,
+      label: option.label,
+      isActive: searchMode === option.searchMode,
+      onPress: () => searchModeChanged(option.searchMode),
+    })),
+  ];
 
-        return (
+  return (
+    <ScrollView
+      horizontal
+      showsHorizontalScrollIndicator={false}
+      style={styles.scroll}
+      contentContainerStyle={styles.scrollContent}
+    >
+      <View
+        style={[styles.container, { backgroundColor: colors.bgCard, borderColor: colors.border }]}
+        accessibilityRole="radiogroup"
+        accessibilityLabel="Где искать"
+      >
+        {options.map((option) => (
           <Pressable
-            key={option}
-            onPress={() => radiusChanged(option)}
+            key={option.key}
+            onPress={option.onPress}
             accessibilityRole="radio"
-            accessibilityState={{ checked: isActive }}
+            accessibilityState={{ checked: option.isActive }}
             hitSlop={4}
-            style={[styles.option, isActive && { backgroundColor: colors.primary }]}
+            style={[styles.option, option.isActive && { backgroundColor: colors.primary }]}
           >
-            <Text style={[styles.label, { color: isActive ? colors.textInverse : colors.textSecondary }]}>
-              {formatRadius(option)}
+            <Text style={[styles.label, { color: option.isActive ? colors.textInverse : colors.textSecondary }]}>
+              {option.label}
             </Text>
           </Pressable>
-        );
-      })}
-    </View>
+        ))}
+      </View>
+    </ScrollView>
   );
 };
 
 const styles = StyleSheet.create({
-  container: {
+  scroll: {
     position: 'absolute',
     top: 10,
-    left: 10,
+    left: 0,
+    right: 0,
+    flexGrow: 0,
+  },
+  scrollContent: {
+    paddingHorizontal: 10,
+  },
+  container: {
     flexDirection: 'row',
     padding: 3,
     gap: 2,

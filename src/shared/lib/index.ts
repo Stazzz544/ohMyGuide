@@ -8,6 +8,9 @@ export type { TextStructure, ParagraphStructure, TextStructureV2, WordInfo, Sent
 export { exportTour } from './export-tour';
 export type { ExportTourParams, ExportFormat, ExportResult } from './export-tour';
 export {
+  boundsAreaKm2,
+  boundsCenter,
+  boundsPolygon,
   circleBounds,
   circlePolygon,
   distanceM,
@@ -15,6 +18,7 @@ export {
   formatDistance,
   formatDuration,
   formatRadius,
+  isInBounds,
   lineBounds,
   snapToGrid,
 } from './geo';

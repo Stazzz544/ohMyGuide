@@ -8,17 +8,20 @@ import { nearbyModel } from '@app/features/nearby-places';
 import { explorerModel } from '../model/explorer-model';
 import { NearbyMap } from './nearby-map';
 import { NearbyList } from './nearby-list';
+import { FavoritesList } from './favorites-list';
+import { PanelTabs } from './panel-tabs';
 import { LocatingState, PermissionDenied } from './location-states';
 import { PlaceCard } from './place-card';
 import { RadiusSwitch } from './radius-switch';
 
 export const NearbyExplorer = (): JSX.Element => {
   const { colors, scheme } = useTheme();
-  const { permission, position, locationError, selectedPlace, explorerOpened, mapStyleRequested } = useUnit({
+  const { permission, position, locationError, selectedPlace, panelMode, explorerOpened, mapStyleRequested } = useUnit({
     permission: locationModel.$permission,
     position: locationModel.$position,
     locationError: locationModel.$error,
     selectedPlace: nearbyModel.$selectedPlace,
+    panelMode: explorerModel.$panelMode,
     explorerOpened: explorerModel.explorerOpened,
     mapStyleRequested: explorerModel.mapStyleRequested,
   });
@@ -57,7 +60,13 @@ export const NearbyExplorer = (): JSX.Element => {
           isPlaceSelected && styles.hidden,
         ]}
       >
-        <NearbyList />
+        <PanelTabs />
+        <View style={[styles.list, panelMode !== 'nearby' && styles.hidden]}>
+          <NearbyList />
+        </View>
+        <View style={[styles.list, panelMode !== 'favorites' && styles.hidden]}>
+          <FavoritesList />
+        </View>
       </View>
       {isPlaceSelected && (
         <View style={[styles.panel, { backgroundColor: colors.bgCard, borderColor: colors.border }]}>
@@ -88,6 +97,9 @@ const styles = StyleSheet.create({
     flexGrow: 1,
     flexShrink: 1,
     flexBasis: 0,
+  },
+  list: {
+    flex: 1,
   },
   hidden: {
     display: 'none',

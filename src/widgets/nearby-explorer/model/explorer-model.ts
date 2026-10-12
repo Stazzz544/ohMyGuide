@@ -20,6 +20,8 @@ const CONTEXT_TIMEOUT_MS = 3000;
 const ARRIVAL_DISTANCE_M = 40;
 const WIKI_ARTICLE_URL = 'https://ru.wikipedia.org/wiki/';
 
+export type PanelMode = 'nearby' | 'favorites';
+
 type MapStyles = Partial<Record<ColorScheme, StyleSpecification | string>>;
 
 type RouteSource = {
@@ -64,6 +66,7 @@ const openArticleFx = createEffect(async (title: string): Promise<void> => {
 
 const $mapStyles = createStore<MapStyles>({});
 const $isRefreshing = createStore<boolean>(false);
+const $panelMode = createStore<PanelMode>('nearby');
 const $isPreparingTour = collectPlaceContextFx.pending;
 // Точность GPS в городе 5–20 м, поэтому «на месте» считаем с запасом
 const $isArrived = combine(
@@ -81,6 +84,7 @@ const routeRequested = createEvent();
 const tourRequested = createEvent();
 const navigatorOpened = createEvent();
 const articleOpened = createEvent();
+const panelModeChanged = createEvent<PanelMode>();
 
 const positionUpdated = sample({
   clock: locationModel.$position.updates,
@@ -221,11 +225,17 @@ sample({
   target: openArticleFx,
 });
 
+sample({
+  clock: panelModeChanged,
+  target: $panelMode,
+});
+
 export const explorerModel = {
   $mapStyles,
   $isRefreshing,
   $isPreparingTour,
   $isArrived,
+  $panelMode,
   explorerOpened,
   refreshed,
   mapStyleRequested,
@@ -233,4 +243,5 @@ export const explorerModel = {
   tourRequested,
   navigatorOpened,
   articleOpened,
+  panelModeChanged,
 };

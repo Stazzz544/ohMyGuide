@@ -6,6 +6,7 @@ import { StatusBar } from 'expo-status-bar';
 import { ThemeProvider, useTheme } from '@app/shared/theme';
 import { tourStore } from '@app/entities/tour';
 import { folderStore } from '@app/entities/folder';
+import { favoritesStore } from '@app/entities/favorite';
 import { settingsModel } from '@app/features/ai-settings';
 
 // Внутренний компонент для доступа к теме
@@ -16,6 +17,7 @@ const RootNavigation = (): JSX.Element => {
   useEffect(() => {
     folderStore.foldersLoaded();
     tourStore.toursLoaded();
+    favoritesStore.favoritesLoaded();
     settingsModel.settingsLoaded();
   }, []);
 

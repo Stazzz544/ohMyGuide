@@ -25,6 +25,10 @@ export const STORAGE_KEYS = {
   AI_API_KEY: 'ohmyguide_ai_api_key',
   NEARBY_SIGHTS_CACHE: 'ohmyguide_nearby_sights_v2',
   NEARBY_RADIUS: 'ohmyguide_nearby_radius',
+  NEARBY_SEARCH_MODE: 'ohmyguide_nearby_search_mode',
+  CITY_SIGHTS_CACHE: 'ohmyguide_city_sights_v1',
+  FAVORITES: 'ohmyguide_favorites',
+  FAVORITE_GROUPS: 'ohmyguide_favorite_groups',
 } as const;
 
 // Раздел «Рядом»

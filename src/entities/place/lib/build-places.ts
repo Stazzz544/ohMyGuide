@@ -5,7 +5,6 @@ import type { WikiNearbyPage, WikidataSight } from '@app/shared/api';
 import type { GeoPoint } from '@app/shared/lib';
 import type { Place, PlaceSort } from '../model/types';
 
-//  в JS работает только для латиницы, поэтому границы слов по кириллице — через lookahead
 // \b в JS работает только для латиницы, поэтому конец слова по кириллице — через lookahead
 const NOT_SIGHTS_PATTERN =
   /(станци[яи] метро|\(станция|улица|переулок|проезд|тупик|шоссе|проспект|бульвар|набережная|район(?![а-яё])|округ(?![а-яё])|^список)/i;
@@ -15,7 +14,7 @@ const MIN_SIGHTS_WITHOUT_UNCATEGORIZED = 15;
 
 type BuildPlacesParams = {
   origin: GeoPoint;
-  radiusM: number;
+  isInside: (place: Place) => boolean;
   sights: WikidataSight[];
   nearest: WikiNearbyPage[];
   sort: PlaceSort;
@@ -49,17 +48,17 @@ const fromWikiPage = (page: WikiNearbyPage, origin: GeoPoint): Place => ({
   kind: detectPlaceKind(page.title, page.description),
 });
 
-const comparePlaces = (sort: PlaceSort) => (a: Place, b: Place): number => {
-  if (sort === 'fame') {
-    return b.fame - a.fame || a.distanceM - b.distanceM;
-  }
-  return a.distanceM - b.distanceM;
-};
+const comparePlaces =
+  (sort: PlaceSort) =>
+  (a: Place, b: Place): number => {
+    if (sort === 'fame') {
+      return b.fame - a.fame || a.distanceM - b.distanceM;
+    }
+    return a.distanceM - b.distanceM;
+  };
 
-export const buildPlaces = ({ origin, radiusM, sights, nearest, sort }: BuildPlacesParams): Place[] => {
-  const known = sights
-    .map((sight) => fromSight(sight, origin))
-    .filter((place) => place.distanceM <= radiusM);
+export const buildPlaces = ({ origin, isInside, sights, nearest, sort }: BuildPlacesParams): Place[] => {
+  const known = sights.map((sight) => fromSight(sight, origin)).filter(isInside);
 
   // Ближайшие статьи объединяем с Wikidata всегда, а не только пока она не ответила:
   // иначе список зависит от того, пришёл ли ответ из кэша, и места то появляются, то пропадают
@@ -69,7 +68,7 @@ export const buildPlaces = ({ origin, radiusM, sights, nearest, sort }: BuildPla
     .map((page) => fromWikiPage(page, origin))
     .filter(
       (place) =>
-        place.distanceM <= radiusM &&
+        isInside(place) &&
         (withUncategorized || place.kind !== 'other') &&
         !knownTitles.has(place.title.toLowerCase()) &&
         !NOT_SIGHTS_PATTERN.test(`${place.title} ${place.description}`),
