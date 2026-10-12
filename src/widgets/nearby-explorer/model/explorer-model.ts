@@ -1,4 +1,5 @@
-import { createEffect, createEvent, createStore, sample } from 'effector';
+import { combine, createEffect, createEvent, createStore, sample } from 'effector';
+import { Linking } from 'react-native';
 import { fetchMapStyleApi, fetchWikiExtractApi } from '@app/shared/api';
 import { MAP_STYLE_URL } from '@app/shared/config';
 import { distanceM, reverseGeocode, withTimeout } from '@app/shared/lib';
@@ -16,6 +17,8 @@ import type { Place } from '@app/entities/place';
 // Меньший сдвиг не стоит нового поиска: расстояния в списке и так пересчитываются от позиции
 const RESEARCH_DISTANCE_M = 300;
 const CONTEXT_TIMEOUT_MS = 3000;
+const ARRIVAL_DISTANCE_M = 40;
+const WIKI_ARTICLE_URL = 'https://ru.wikipedia.org/wiki/';
 
 type MapStyles = Partial<Record<ColorScheme, StyleSpecification | string>>;
 
@@ -55,9 +58,21 @@ const collectPlaceContextFx = createEffect(async (place: Place): Promise<PlaceTo
   };
 });
 
+const openArticleFx = createEffect(async (title: string): Promise<void> => {
+  await Linking.openURL(`${WIKI_ARTICLE_URL}${encodeURIComponent(title.replace(/ /g, '_'))}`);
+});
+
 const $mapStyles = createStore<MapStyles>({});
 const $isRefreshing = createStore<boolean>(false);
 const $isPreparingTour = collectPlaceContextFx.pending;
+// Точность GPS в городе 5–20 м, поэтому «на месте» считаем с запасом
+const $isArrived = combine(
+  locationModel.$position,
+  nearbyModel.$selectedPlace,
+  routeModel.$route,
+  (position, place, route) =>
+    position !== null && place !== null && route !== null && distanceM(position, place) <= ARRIVAL_DISTANCE_M,
+);
 
 const explorerOpened = createEvent();
 const refreshed = createEvent();
@@ -65,6 +80,7 @@ const mapStyleRequested = createEvent<ColorScheme>();
 const routeRequested = createEvent();
 const tourRequested = createEvent();
 const navigatorOpened = createEvent();
+const articleOpened = createEvent();
 
 const positionUpdated = sample({
   clock: locationModel.$position.updates,
@@ -76,6 +92,11 @@ sample({
   source: locationModel.$position,
   filter: (position) => position === null,
   target: locationModel.locationRequested,
+});
+
+sample({
+  clock: positionUpdated,
+  target: nearbyModel.positionChanged,
 });
 
 sample({
@@ -187,14 +208,24 @@ sample({
   target: generateModel.placeTourRequested,
 });
 
+sample({
+  clock: articleOpened,
+  source: nearbyModel.$selectedPlace,
+  filter: (place): place is Place => place !== null,
+  fn: (place: Place) => place.title,
+  target: openArticleFx,
+});
+
 export const explorerModel = {
   $mapStyles,
   $isRefreshing,
   $isPreparingTour,
+  $isArrived,
   explorerOpened,
   refreshed,
   mapStyleRequested,
   routeRequested,
   tourRequested,
   navigatorOpened,
+  articleOpened,
 };

@@ -1,5 +1,9 @@
 export type PlaceSource = 'wikidata' | 'wikipedia';
 
+export type PlaceKind = 'temple' | 'museum' | 'park' | 'monument' | 'other';
+
+export type PlaceKindFilter = PlaceKind | 'all';
+
 export type Place = {
   id: string;
   title: string;
@@ -12,6 +16,7 @@ export type Place = {
   fame: number;
   thumbnail: string | null;
   source: PlaceSource;
+  kind: PlaceKind;
 };
 
 export type PlaceSort = 'distance' | 'fame';

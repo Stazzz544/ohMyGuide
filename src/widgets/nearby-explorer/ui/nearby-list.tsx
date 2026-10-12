@@ -1,31 +1,33 @@
-import { FlatList, Pressable, RefreshControl, StyleSheet, Text, View } from 'react-native';
+import { FlatList, Pressable, RefreshControl, ScrollView, StyleSheet, Text, View } from 'react-native';
 import { JSX, useCallback, useEffect, useRef } from 'react';
 import { useUnit } from 'effector-react';
 import { useTheme } from '@app/shared/theme';
 import { Button, ErrorMessage, Skeleton } from '@app/shared/ui';
 import { pluralize } from '@app/shared/lib';
-import { PlaceRow } from '@app/entities/place';
+import { PLACE_KIND_LABELS, PlaceRow } from '@app/entities/place';
 import { nearbyModel } from '@app/features/nearby-places';
 import { explorerModel } from '../model/explorer-model';
 
 import type { ListRenderItem } from 'react-native';
-import type { Place, PlaceSort } from '@app/entities/place';
+import type { Place, PlaceKind, PlaceSort } from '@app/entities/place';
 
 const PLACE_FORMS = { one: 'место', few: 'места', many: 'мест' };
 const SKELETON_ROWS = 5;
+const KINDS = Object.keys(PLACE_KIND_LABELS) as PlaceKind[];
+const ATTRIBUTION = 'Места: Wikidata и Википедия · фото: Wikimedia Commons · маршруты: OSRM · карта: OpenFreeMap, © OpenStreetMap';
 
 const SORT_OPTIONS: Array<{ value: PlaceSort; label: string }> = [
   { value: 'distance', label: 'Ближе' },
   { value: 'fame', label: 'Известнее' },
 ];
 
-type SortChipProps = {
+type ChipProps = {
   label: string;
   isActive: boolean;
   onPress: () => void;
 };
 
-const SortChip = ({ label, isActive, onPress }: SortChipProps): JSX.Element => {
+const Chip = ({ label, isActive, onPress }: ChipProps): JSX.Element => {
   const { colors } = useTheme();
 
   return (
@@ -59,8 +61,11 @@ export const NearbyList = (): JSX.Element => {
     retried,
     refreshed,
     isRefreshing,
+    activeKind,
+    kindCounts,
+    kindChanged,
   } = useUnit({
-    places: nearbyModel.$places,
+    places: nearbyModel.$visiblePlaces,
     selectedId: nearbyModel.$selectedId,
     sort: nearbyModel.$sort,
     error: nearbyModel.$error,
@@ -72,7 +77,11 @@ export const NearbyList = (): JSX.Element => {
     retried: nearbyModel.retried,
     refreshed: explorerModel.refreshed,
     isRefreshing: explorerModel.$isRefreshing,
+    activeKind: nearbyModel.$kind,
+    kindCounts: nearbyModel.$kindCounts,
+    kindChanged: nearbyModel.kindChanged,
   });
+  const kinds = KINDS.filter((item) => (kindCounts[item] ?? 0) > 0);
   const listRef = useRef<FlatList<Place>>(null);
 
   useEffect(() => {
@@ -100,7 +109,7 @@ export const NearbyList = (): JSX.Element => {
           <Text style={[styles.title, { color: colors.textPrimary }]}>{title}</Text>
           <View style={styles.chips}>
             {SORT_OPTIONS.map((option) => (
-              <SortChip
+              <Chip
                 key={option.value}
                 label={option.label}
                 isActive={sort === option.value}
@@ -109,6 +118,19 @@ export const NearbyList = (): JSX.Element => {
             ))}
           </View>
         </View>
+        {kinds.length > 1 && (
+          <ScrollView horizontal showsHorizontalScrollIndicator={false} contentContainerStyle={styles.chips}>
+            <Chip label="Все" isActive={activeKind === 'all'} onPress={() => kindChanged('all')} />
+            {kinds.map((item) => (
+              <Chip
+                key={item}
+                label={`${PLACE_KIND_LABELS[item]} · ${kindCounts[item] ?? 0}`}
+                isActive={activeKind === item}
+                onPress={() => kindChanged(item)}
+              />
+            ))}
+          </ScrollView>
+        )}
         {isSightsLoading && (
           <Text style={[styles.status, { color: colors.textSecondary }]}>
             Ищем известные места рядом. В новом районе первый поиск занимает до 20 секунд
@@ -156,6 +178,9 @@ export const NearbyList = (): JSX.Element => {
           renderItem={renderItem}
           extraData={selectedId}
           onScrollToIndexFailed={handleScrollToIndexFailed}
+          ListFooterComponent={
+            <Text style={[styles.attribution, { color: colors.textSecondary }]}>{ATTRIBUTION}</Text>
+          }
           refreshControl={
             <RefreshControl
               refreshing={isRefreshing}
@@ -230,5 +255,10 @@ const styles = StyleSheet.create({
   empty: {
     padding: 16,
     fontSize: 15,
+  },
+  attribution: {
+    paddingHorizontal: 16,
+    paddingVertical: 14,
+    fontSize: 11,
   },
 });

@@ -6,7 +6,7 @@ import { buildPlaces } from '@app/entities/place';
 
 import type { WikiNearbyPage, WikidataSight } from '@app/shared/api';
 import type { GeoPoint } from '@app/shared/lib';
-import type { PlaceSort } from '@app/entities/place';
+import type { PlaceKind, PlaceKindFilter, PlaceSort } from '@app/entities/place';
 
 // Центр запроса к Wikidata округляем до сетки ~2 км: соседи шлют одинаковый запрос
 // и получают ответ из кэша WDQS, а у нас он ложится в кэш по ключу ячейки
@@ -57,10 +57,12 @@ const fetchSightsFx = createEffect((cell: Cell) => fetchWikidataSightsApi(cell.c
 const fetchNearestFx = createEffect((origin: GeoPoint) => fetchWikiNearbyApi(origin, NEARBY_RADIUS_M));
 
 const $origin = createStore<GeoPoint | null>(null);
+const $position = createStore<GeoPoint | null>(null);
 const $cell = createStore<Cell | null>(null);
 const $sights = createStore<WikidataSight[]>([]);
 const $nearest = createStore<WikiNearbyPage[]>([]);
 const $sort = createStore<PlaceSort>('distance');
+const $kind = createStore<PlaceKindFilter>('all');
 const $selectedId = createStore<string | null>(null);
 const $error = createStore<string | null>(null);
 const $sightsError = createStore<string | null>(null);
@@ -72,23 +74,40 @@ const $isSightsLoading = combine(
 );
 
 const searchRequested = createEvent<GeoPoint>();
+const positionChanged = createEvent<GeoPoint>();
 const retried = createEvent();
 const sortChanged = createEvent<PlaceSort>();
+const kindChanged = createEvent<PlaceKindFilter>();
 const placeSelected = createEvent<string>();
 const selectionCleared = createEvent();
 
-const $places = combine($origin, $sights, $nearest, $sort, (origin, sights, nearest, sort) =>
-  origin ? buildPlaces({ origin, radiusM: NEARBY_RADIUS_M, sights, nearest, sort }) : [],
+// Расстояния считаем от текущей позиции, а не от точки поиска: при ходьбе новый поиск идёт раз в 300 м
+const $places = combine($position, $sights, $nearest, $sort, (position, sights, nearest, sort) =>
+  position ? buildPlaces({ origin: position, radiusM: NEARBY_RADIUS_M, sights, nearest, sort }) : [],
 );
 const $selectedPlace = combine(
   $places,
   $selectedId,
   (places, selectedId) => places.find((place) => place.id === selectedId) ?? null,
 );
+const $visiblePlaces = combine($places, $kind, (places, kind) =>
+  kind === 'all' ? places : places.filter((place) => place.kind === kind),
+);
+const $kindCounts = $places.map((places) =>
+  places.reduce<Partial<Record<PlaceKind, number>>>(
+    (counts, place) => ({ ...counts, [place.kind]: (counts[place.kind] ?? 0) + 1 }),
+    {},
+  ),
+);
 
 sample({
   clock: searchRequested,
   target: [$origin, fetchNearestFx],
+});
+
+sample({
+  clock: [searchRequested, positionChanged],
+  target: $position,
 });
 
 // Выбор не сбрасываем: при ходьбе по маршруту поиск перезапускается каждые 300 м
@@ -209,6 +228,26 @@ sample({
 });
 
 sample({
+  clock: kindChanged,
+  target: $kind,
+});
+
+sample({
+  clock: kindChanged,
+  fn: () => null,
+  target: $selectedId,
+});
+
+// После нового поиска выбранной категории рядом может не оказаться
+sample({
+  clock: $kindCounts.updates,
+  source: $kind,
+  filter: (kind, counts) => kind !== 'all' && !counts[kind],
+  fn: (): PlaceKindFilter => 'all',
+  target: $kind,
+});
+
+sample({
   clock: placeSelected,
   source: $selectedId,
   fn: (selectedId, placeId) => (selectedId === placeId ? null : placeId),
@@ -224,6 +263,9 @@ sample({
 export const nearbyModel = {
   $origin,
   $places,
+  $visiblePlaces,
+  $kindCounts,
+  $kind,
   $selectedId,
   $selectedPlace,
   $sort,
@@ -232,8 +274,10 @@ export const nearbyModel = {
   $isNearestLoading,
   $isSightsLoading,
   searchRequested,
+  positionChanged,
   retried,
   sortChanged,
+  kindChanged,
   placeSelected,
   selectionCleared,
 };

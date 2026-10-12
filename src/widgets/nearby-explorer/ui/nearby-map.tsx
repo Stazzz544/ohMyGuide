@@ -18,12 +18,19 @@ const CAMERA_DURATION_MS = 600;
 const SELECTED_ZOOM = 15;
 const PLACE_HITBOX = { top: 14, right: 14, bottom: 14, left: 14 };
 
+// Слои ложатся на карту в порядке монтирования источников, поэтому источники не монтируем по условию:
+// пустые данные вместо этого, чтобы маршрут не оказался поверх пинов
+const EMPTY_COLLECTION: GeoJSON.FeatureCollection = {
+  type: 'FeatureCollection',
+  features: [],
+};
+
 export const NearbyMap = (): JSX.Element => {
   const { colors, scheme } = useTheme();
   const { origin, position, places, selectedPlace, selectedId, route, mapStyles, placeSelected } = useUnit({
     origin: nearbyModel.$origin,
     position: locationModel.$position,
-    places: nearbyModel.$places,
+    places: nearbyModel.$visiblePlaces,
     selectedPlace: nearbyModel.$selectedPlace,
     selectedId: nearbyModel.$selectedId,
     route: routeModel.$route,
@@ -33,7 +40,7 @@ export const NearbyMap = (): JSX.Element => {
 
   const mapStyle = mapStyles[scheme];
 
-  const radiusData = useMemo(() => (origin ? circlePolygon(origin, NEARBY_RADIUS_M) : null), [origin]);
+  const radiusData = useMemo(() => (origin ? circlePolygon(origin, NEARBY_RADIUS_M) : EMPTY_COLLECTION), [origin]);
 
   const placesData = useMemo(
     (): GeoJSON.FeatureCollection<GeoJSON.Point> => ({
@@ -48,17 +55,26 @@ export const NearbyMap = (): JSX.Element => {
   );
 
   const positionData = useMemo(
-    (): GeoJSON.Feature<GeoJSON.Point> | null =>
+    (): GeoJSON.GeoJSON =>
       position
-        ? { type: 'Feature', properties: {}, geometry: { type: 'Point', coordinates: [position.lon, position.lat] } }
-        : null,
+        ? {
+            type: 'Feature',
+            properties: {},
+            geometry: {
+              type: 'Point',
+              coordinates: [position.lon, position.lat],
+            },
+          }
+        : EMPTY_COLLECTION,
     [position],
   );
 
   const cameraStop = useMemo((): CameraStop | null => {
     if (route) {
       return {
-        bounds: lineBounds(route.line.coordinates),
+        bounds: lineBounds(
+          position ? [...route.line.coordinates, [position.lon, position.lat]] : route.line.coordinates,
+        ),
         padding: ROUTE_PADDING,
         duration: CAMERA_DURATION_MS,
         easing: 'ease',
@@ -81,7 +97,7 @@ export const NearbyMap = (): JSX.Element => {
       };
     }
     return null;
-  }, [route, selectedPlace, origin]);
+  }, [route, position, selectedPlace, origin]);
 
   const handlePlacePress = useCallback(
     (event: NativeSyntheticEvent<PressEventWithFeatures>) => {
@@ -109,33 +125,33 @@ export const NearbyMap = (): JSX.Element => {
       compass={false}
       attributionPosition={{ bottom: CARD_BORDER_RADIUS + 8, left: 8 }}
     >
-      {cameraStop && <Camera {...cameraStop} />}
-      {radiusData && (
-        <GeoJSONSource id="nearby-radius" data={radiusData}>
-          <Layer id="nearby-radius-fill" type="fill" paint={{ 'fill-color': colors.primary, 'fill-opacity': 0.06 }} />
-          <Layer
-            id="nearby-radius-line"
-            type="line"
-            paint={{ 'line-color': colors.primary, 'line-width': 1.5, 'line-dasharray': [3, 2] }}
-          />
-        </GeoJSONSource>
-      )}
-      {route && (
-        <GeoJSONSource id="nearby-route" data={route.line}>
-          <Layer
-            id="nearby-route-casing"
-            type="line"
-            layout={{ 'line-join': 'round', 'line-cap': 'round' }}
-            paint={{ 'line-color': colors.bgCard, 'line-width': 9 }}
-          />
-          <Layer
-            id="nearby-route-line"
-            type="line"
-            layout={{ 'line-join': 'round', 'line-cap': 'round' }}
-            paint={{ 'line-color': colors.primary, 'line-width': 5 }}
-          />
-        </GeoJSONSource>
-      )}
+      <Camera {...(cameraStop ?? {})} />
+      <GeoJSONSource id="nearby-radius" data={radiusData}>
+        <Layer id="nearby-radius-fill" type="fill" paint={{ 'fill-color': colors.primary, 'fill-opacity': 0.06 }} />
+        <Layer
+          id="nearby-radius-line"
+          type="line"
+          paint={{
+            'line-color': colors.primary,
+            'line-width': 1.5,
+            'line-dasharray': [3, 2],
+          }}
+        />
+      </GeoJSONSource>
+      <GeoJSONSource id="nearby-route" data={route?.line ?? EMPTY_COLLECTION}>
+        <Layer
+          id="nearby-route-casing"
+          type="line"
+          layout={{ 'line-join': 'round', 'line-cap': 'round' }}
+          paint={{ 'line-color': colors.bgCard, 'line-width': 9 }}
+        />
+        <Layer
+          id="nearby-route-line"
+          type="line"
+          layout={{ 'line-join': 'round', 'line-cap': 'round' }}
+          paint={{ 'line-color': colors.primary, 'line-width': 5 }}
+        />
+      </GeoJSONSource>
       <GeoJSONSource id="nearby-places" data={placesData} onPress={handlePlacePress} hitbox={PLACE_HITBOX}>
         <Layer
           id="nearby-places-dot"
@@ -159,28 +175,34 @@ export const NearbyMap = (): JSX.Element => {
             'text-anchor': 'top',
             'text-max-width': 12,
           }}
-          paint={{ 'text-color': colors.textPrimary, 'text-halo-color': colors.bgCard, 'text-halo-width': 1.5 }}
+          paint={{
+            'text-color': colors.textPrimary,
+            'text-halo-color': colors.bgCard,
+            'text-halo-width': 1.5,
+          }}
         />
       </GeoJSONSource>
-      {positionData && (
-        <GeoJSONSource id="nearby-position" data={positionData}>
-          <Layer
-            id="nearby-position-halo"
-            type="circle"
-            paint={{ 'circle-radius': 14, 'circle-color': colors.primary, 'circle-opacity': 0.18 }}
-          />
-          <Layer
-            id="nearby-position-dot"
-            type="circle"
-            paint={{
-              'circle-radius': 7,
-              'circle-color': colors.primary,
-              'circle-stroke-color': colors.bgCard,
-              'circle-stroke-width': 3,
-            }}
-          />
-        </GeoJSONSource>
-      )}
+      <GeoJSONSource id="nearby-position" data={positionData}>
+        <Layer
+          id="nearby-position-halo"
+          type="circle"
+          paint={{
+            'circle-radius': 14,
+            'circle-color': colors.primary,
+            'circle-opacity': 0.18,
+          }}
+        />
+        <Layer
+          id="nearby-position-dot"
+          type="circle"
+          paint={{
+            'circle-radius': 7,
+            'circle-color': colors.primary,
+            'circle-stroke-color': colors.bgCard,
+            'circle-stroke-width': 3,
+          }}
+        />
+      </GeoJSONSource>
     </MapLibreMap>
   );
 };

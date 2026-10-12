@@ -26,6 +26,8 @@ export const PlaceCard = (): JSX.Element | null => {
     routeRequested,
     tourRequested,
     navigatorOpened,
+    isArrived,
+    articleOpened,
   } = useUnit({
     place: nearbyModel.$selectedPlace,
     route: routeModel.$route,
@@ -37,6 +39,8 @@ export const PlaceCard = (): JSX.Element | null => {
     routeRequested: explorerModel.routeRequested,
     tourRequested: explorerModel.tourRequested,
     navigatorOpened: explorerModel.navigatorOpened,
+    isArrived: explorerModel.$isArrived,
+    articleOpened: explorerModel.articleOpened,
   });
 
   const handleTourPress = useCallback(() => {
@@ -60,13 +64,26 @@ export const PlaceCard = (): JSX.Element | null => {
               {place.description}
             </Text>
           ) : null}
+          <Pressable onPress={articleOpened} hitSlop={6} accessibilityRole="link">
+            <Text style={[styles.link, { color: colors.primary }]}>Статья в Википедии</Text>
+          </Pressable>
         </View>
         <Pressable onPress={selectionCleared} hitSlop={10} accessibilityRole="button" accessibilityLabel="Закрыть">
           <Ionicons name="close" size={24} color={colors.textSecondary} />
         </Pressable>
       </View>
 
-      {route ? (
+      {route && isArrived && (
+        <View style={[styles.route, { backgroundColor: `${colors.success}26` }]}>
+          <Ionicons name="flag-outline" size={18} color={colors.success} />
+          <Text style={[styles.routeDistance, { color: colors.textPrimary }]}>Вы на месте</Text>
+          <Pressable onPress={routeCleared} hitSlop={8} accessibilityRole="button" style={styles.routeClear}>
+            <Text style={[styles.routeClearLabel, { color: colors.textSecondary }]}>Убрать</Text>
+          </Pressable>
+        </View>
+      )}
+
+      {route && !isArrived && (
         <View style={[styles.route, { backgroundColor: `${colors.primary}1f` }]}>
           <Text style={[styles.routeTime, { color: colors.primary }]}>{formatDuration(route.durationS)}</Text>
           <Text style={[styles.routeDistance, { color: colors.textSecondary }]}>
@@ -76,7 +93,9 @@ export const PlaceCard = (): JSX.Element | null => {
             <Text style={[styles.routeClearLabel, { color: colors.textSecondary }]}>Убрать</Text>
           </Pressable>
         </View>
-      ) : (
+      )}
+
+      {!route && (
         <Text style={[styles.description, { color: colors.textSecondary }]}>
           {`${formatDistance(place.distanceM)} по прямой`}
         </Text>
@@ -135,6 +154,11 @@ const styles = StyleSheet.create({
   },
   description: {
     fontSize: 13,
+  },
+  link: {
+    fontSize: 13,
+    fontWeight: '500',
+    marginTop: 2,
   },
   route: {
     flexDirection: 'row',

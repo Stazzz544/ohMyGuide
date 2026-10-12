@@ -1,11 +1,14 @@
 import { distanceM } from '@app/shared/lib';
+import { detectPlaceKind } from './place-kind';
 
 import type { WikiNearbyPage, WikidataSight } from '@app/shared/api';
 import type { GeoPoint } from '@app/shared/lib';
 import type { Place, PlaceSort } from '../model/types';
 
+//  в JS работает только для латиницы, поэтому границы слов по кириллице — через lookahead
+// \b в JS работает только для латиницы, поэтому конец слова по кириллице — через lookahead
 const NOT_SIGHTS_PATTERN =
-  /(станци[яи] метро|\(станция|улица|переулок|проезд|тупик|шоссе|проспект|бульвар|набережная|район\b|округ\b|^список)/i;
+  /(станци[яи] метро|\(станция|улица|переулок|проезд|тупик|шоссе|проспект|бульвар|набережная|район(?![а-яё])|округ(?![а-яё])|^список)/i;
 
 // Если известных мест мало (небольшой город), добираем ближайшими статьями Википедии
 const MIN_SIGHTS_WITHOUT_NEAREST = 15;
@@ -29,6 +32,7 @@ const fromSight = (sight: WikidataSight, origin: GeoPoint): Place => ({
   fame: sight.sitelinks,
   thumbnail: sight.image,
   source: 'wikidata',
+  kind: detectPlaceKind(sight.label, sight.description),
 });
 
 const fromWikiPage = (page: WikiNearbyPage, origin: GeoPoint): Place => ({
@@ -42,6 +46,7 @@ const fromWikiPage = (page: WikiNearbyPage, origin: GeoPoint): Place => ({
   fame: 0,
   thumbnail: page.thumbnail,
   source: 'wikipedia',
+  kind: detectPlaceKind(page.title, page.description),
 });
 
 const comparePlaces = (sort: PlaceSort) => (a: Place, b: Place): number => {
