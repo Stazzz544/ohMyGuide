@@ -66,3 +66,22 @@ export const formatDistance = (meters: number): string => {
 
 export const estimateWalkMinutes = (meters: number): number =>
   Math.max(1, Math.round((meters * WALK_DETOUR_FACTOR) / WALK_SPEED_MPS / 60));
+
+export const formatDuration = (seconds: number): string => {
+  const minutes = Math.max(1, Math.round(seconds / 60));
+  if (minutes < 60) {
+    return `${minutes} мин`;
+  }
+  return `${Math.floor(minutes / 60)} ч ${minutes % 60} мин`;
+};
+
+export const lineBounds = (coordinates: GeoJSON.Position[]): GeoBounds =>
+  coordinates.reduce<GeoBounds>(
+    ([west, south, east, north], [lon, lat]) => [
+      Math.min(west, lon),
+      Math.min(south, lat),
+      Math.max(east, lon),
+      Math.max(north, lat),
+    ],
+    [Infinity, Infinity, -Infinity, -Infinity],
+  );

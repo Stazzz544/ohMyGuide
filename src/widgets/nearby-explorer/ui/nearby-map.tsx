@@ -4,26 +4,29 @@ import { useUnit } from 'effector-react';
 import { Camera, GeoJSONSource, Layer, Map as MapLibreMap } from '@maplibre/maplibre-react-native';
 import { useTheme } from '@app/shared/theme';
 import { CARD_BORDER_RADIUS, NEARBY_RADIUS_M } from '@app/shared/config';
-import { circleBounds, circlePolygon } from '@app/shared/lib';
+import { circleBounds, circlePolygon, lineBounds } from '@app/shared/lib';
 import { locationModel } from '@app/features/user-location';
 import { nearbyModel } from '@app/features/nearby-places';
+import { routeModel } from '@app/features/walking-route';
 import { explorerModel } from '../model/explorer-model';
 
 import type { CameraStop, PressEventWithFeatures } from '@maplibre/maplibre-react-native';
 
 const CAMERA_PADDING = { top: 16, right: 16, bottom: 16, left: 16 };
+const ROUTE_PADDING = { top: 48, right: 48, bottom: 64, left: 48 };
 const CAMERA_DURATION_MS = 600;
 const SELECTED_ZOOM = 15;
 const PLACE_HITBOX = { top: 14, right: 14, bottom: 14, left: 14 };
 
 export const NearbyMap = (): JSX.Element => {
   const { colors, scheme } = useTheme();
-  const { origin, position, places, selectedPlace, selectedId, mapStyles, placeSelected } = useUnit({
+  const { origin, position, places, selectedPlace, selectedId, route, mapStyles, placeSelected } = useUnit({
     origin: nearbyModel.$origin,
     position: locationModel.$position,
     places: nearbyModel.$places,
     selectedPlace: nearbyModel.$selectedPlace,
     selectedId: nearbyModel.$selectedId,
+    route: routeModel.$route,
     mapStyles: explorerModel.$mapStyles,
     placeSelected: nearbyModel.placeSelected,
   });
@@ -53,6 +56,14 @@ export const NearbyMap = (): JSX.Element => {
   );
 
   const cameraStop = useMemo((): CameraStop | null => {
+    if (route) {
+      return {
+        bounds: lineBounds(route.line.coordinates),
+        padding: ROUTE_PADDING,
+        duration: CAMERA_DURATION_MS,
+        easing: 'ease',
+      };
+    }
     if (selectedPlace) {
       return {
         center: [selectedPlace.lon, selectedPlace.lat],
@@ -70,7 +81,7 @@ export const NearbyMap = (): JSX.Element => {
       };
     }
     return null;
-  }, [selectedPlace, origin]);
+  }, [route, selectedPlace, origin]);
 
   const handlePlacePress = useCallback(
     (event: NativeSyntheticEvent<PressEventWithFeatures>) => {
@@ -106,6 +117,22 @@ export const NearbyMap = (): JSX.Element => {
             id="nearby-radius-line"
             type="line"
             paint={{ 'line-color': colors.primary, 'line-width': 1.5, 'line-dasharray': [3, 2] }}
+          />
+        </GeoJSONSource>
+      )}
+      {route && (
+        <GeoJSONSource id="nearby-route" data={route.line}>
+          <Layer
+            id="nearby-route-casing"
+            type="line"
+            layout={{ 'line-join': 'round', 'line-cap': 'round' }}
+            paint={{ 'line-color': colors.bgCard, 'line-width': 9 }}
+          />
+          <Layer
+            id="nearby-route-line"
+            type="line"
+            layout={{ 'line-join': 'round', 'line-cap': 'round' }}
+            paint={{ 'line-color': colors.primary, 'line-width': 5 }}
           />
         </GeoJSONSource>
       )}

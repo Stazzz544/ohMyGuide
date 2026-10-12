@@ -13,8 +13,12 @@ export {
   distanceM,
   estimateWalkMinutes,
   formatDistance,
+  formatDuration,
+  lineBounds,
   snapToGrid,
 } from './geo';
 export type { GeoBounds, GeoPoint } from './geo';
 export { pluralize } from './plural';
+export { reverseGeocode } from './reverse-geocode';
+export { withTimeout } from './with-timeout';
 export type { PluralForms } from './plural';

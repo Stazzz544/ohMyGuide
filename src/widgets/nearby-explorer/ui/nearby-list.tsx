@@ -58,6 +58,7 @@ export const NearbyList = (): JSX.Element => {
     sortChanged,
     retried,
     refreshed,
+    isRefreshing,
   } = useUnit({
     places: nearbyModel.$places,
     selectedId: nearbyModel.$selectedId,
@@ -70,6 +71,7 @@ export const NearbyList = (): JSX.Element => {
     sortChanged: nearbyModel.sortChanged,
     retried: nearbyModel.retried,
     refreshed: explorerModel.refreshed,
+    isRefreshing: explorerModel.$isRefreshing,
   });
   const listRef = useRef<FlatList<Place>>(null);
 
@@ -156,7 +158,7 @@ export const NearbyList = (): JSX.Element => {
           onScrollToIndexFailed={handleScrollToIndexFailed}
           refreshControl={
             <RefreshControl
-              refreshing={isNearestLoading}
+              refreshing={isRefreshing}
               onRefresh={refreshed}
               colors={[colors.primary]}
               tintColor={colors.primary}

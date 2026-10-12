@@ -1,6 +1,6 @@
 # «Рядом»: прогресс
 
-Ветка `dev_12_10_2026_1`, не закоммичено. План и демо — `docs/nearby-attractions-plan.html`.
+Ветка `dev_12_10_2026_1`. Этапы 1–2 закоммичены (af5cc2f), этапы 3–4 — нет. План и демо — `docs/nearby-attractions-plan.html`.
 
 ## Сделано (этапы 1–2)
 - Спайк: `@maplibre/maplibre-react-native` 11.5 работает на RN 0.81 + New Arch (debug-сборка, эмулятор Pixel_9_Pro_XL). WebView-запасной путь не нужен.
@@ -11,9 +11,16 @@
 ## Файлы
 `src/shared/api/{public-client,wikidata-sights-api,wiki-geosearch-api,map-style-api}.ts`, `src/shared/lib/{geo,plural}.ts`, `src/entities/place`, `src/features/{user-location,nearby-places}`, `src/widgets/nearby-explorer`, `app/(tabs)/nearby.tsx`; правки: `app.config.ts`, `app/(tabs)/_layout.tsx`, `constants.ts`, `colors.ts` (`mapPin`).
 
-## Дальше (этапы 3–4)
-- Маршрут: `walking-route-api.ts` (OSRM `routing.openstreetmap.de/routed-foot`, резерв ORS), линия на карте, км/мин, ведение `watchPositionAsync`, «Открыть в навигаторе».
-- Экскурсия: контекст места (адрес, координаты, extract из Википедии) в `generateTourApi`, переход в генерацию, `location`/`placeId` в `Tour`.
+## Сделано (этапы 3–4)
+- Карточка выбранного места: «Маршрут», «Экскурсия», «В навигаторе» (`geo:` — выбор приложения карт), закрыть.
+- Маршрут: OSRM FOSSGIS foot (`walking-route-api.ts`, `features/walking-route`), линия на карте, камера по маршруту, «9 мин · 670 м пешком», «Убрать». Пока маршрут на карте — `watchPositionAsync` (шаг 10 м), при сбросе — стоп.
+- Экскурсия: название сразу уходит в генерацию (`placeTourStarted`), затем адрес (`reverseGeocodeAsync`, таймаут 3 с) и вводный абзац Википедии (таймаут 3 с) — в `generateTourApi` через `placeTourRequested` → промпт с «Где это», координатами и справкой.
+
+## Не сделано
+- Резервный маршрутизатор ORS — нужен бесплатный ключ openrouteservice.org.
+- Сохранение экскурсии с координатами (`Tour.location`) — пока ничем не используется.
+- Генерация с контекстом не проверена до конца: на эмуляторе нет ключа Groq.
+- Overpass, категории, офлайн — по желанию.
 
 ## Гочи
 - Metro с `CI=1` не следит за файлами — правки не доходят до устройства. Запускать `npx expo start --dev-client` без CI.

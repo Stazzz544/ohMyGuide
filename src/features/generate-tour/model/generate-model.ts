@@ -10,7 +10,7 @@ import { tourStore } from '@app/entities/tour';
 import { settingsModel } from '@app/features/ai-settings';
 
 import type { CachedTour } from '@app/entities/tour';
-import type { GenerateTourParams } from '@app/shared/api';
+import type { GenerateTourParams, PlaceContext } from '@app/shared/api';
 
 // --- Effects ---
 
@@ -41,6 +41,7 @@ const $generatedText = createStore<string>('');
 const $error = createStore<string | null>(null);
 const $modelNotice = createStore<string | null>(null);
 const $isPrepareMode = createStore<boolean>(false);
+const $placeContext = createStore<PlaceContext | null>(null);
 const $isGenerating = generateTourFx.pending;
 
 // --- Events ---
@@ -50,6 +51,8 @@ const generatePressed = createEvent();
 const prepareOfflinePressed = createEvent();
 const resetGeneration = createEvent();
 const tourLoaded = createEvent<{ placeName: string; generatedText: string }>();
+const placeTourStarted = createEvent<string>();
+const placeTourRequested = createEvent<{ placeName: string; context: PlaceContext }>();
 
 // Обновление имени места
 sample({
@@ -57,11 +60,11 @@ sample({
   target: $placeName,
 });
 
-// Сброс ошибки при изменении ввода
+// Сброс ошибки и контекста места при изменении ввода
 sample({
   clock: placeNameChanged,
   fn: () => null,
-  target: $error,
+  target: [$error, $placeContext],
 });
 
 // Сброс ошибки и уведомления о смене модели при начале новой генерации
@@ -87,7 +90,7 @@ sample({
 sample({
   clock: tourLoaded,
   fn: () => null,
-  target: $error,
+  target: [$error, $placeContext],
 });
 
 // Устанавливаем флаг prepareMode
@@ -110,6 +113,7 @@ sample({
     placeName: $placeName,
     apiKey: settingsModel.$apiKey,
     model: settingsModel.$model,
+    context: $placeContext,
   },
   filter: ({ placeName, apiKey }) => placeName.trim().length > 0 && apiKey.trim().length > 0,
   target: generateTourFx,
@@ -122,8 +126,56 @@ sample({
     placeName: $placeName,
     apiKey: settingsModel.$apiKey,
     model: settingsModel.$model,
+    context: $placeContext,
   },
   filter: ({ placeName, apiKey }) => placeName.trim().length > 0 && apiKey.trim().length > 0,
+  target: generateTourFx,
+});
+
+// Экскурсия по месту из раздела «Рядом»: сначала показываем название и убираем прошлый текст,
+// потом, когда соберётся контекст места, запускаем генерацию
+sample({
+  clock: placeTourStarted,
+  target: $placeName,
+});
+
+sample({
+  clock: placeTourStarted,
+  fn: () => '',
+  target: $generatedText,
+});
+
+sample({
+  clock: placeTourStarted,
+  fn: () => null,
+  target: [$error, $modelNotice, $placeContext],
+});
+
+// Параметры генерации собираем из события, а не из сторов,
+// чтобы не зависеть от порядка их обновления
+sample({
+  clock: placeTourRequested,
+  fn: ({ placeName }) => placeName,
+  target: $placeName,
+});
+
+sample({
+  clock: placeTourRequested,
+  fn: ({ context }) => context,
+  target: $placeContext,
+});
+
+sample({
+  clock: placeTourRequested,
+  fn: () => false,
+  target: $isPrepareMode,
+});
+
+sample({
+  clock: placeTourRequested,
+  source: { apiKey: settingsModel.$apiKey, model: settingsModel.$model },
+  filter: ({ apiKey }) => apiKey.trim().length > 0,
+  fn: ({ apiKey, model }, { placeName, context }): GenerateTourParams => ({ placeName, apiKey, model, context }),
   target: generateTourFx,
 });
 
@@ -188,7 +240,7 @@ sample({
 sample({
   clock: resetGeneration,
   fn: () => null,
-  target: [$error, $modelNotice],
+  target: [$error, $modelNotice, $placeContext],
 });
 
 // Составной стор: можно ли генерировать
@@ -212,4 +264,6 @@ export const generateModel = {
   prepareOfflinePressed,
   resetGeneration,
   tourLoaded,
+  placeTourStarted,
+  placeTourRequested,
 };

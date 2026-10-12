@@ -8,6 +8,7 @@ import { explorerModel } from '../model/explorer-model';
 import { NearbyMap } from './nearby-map';
 import { NearbyList } from './nearby-list';
 import { LocatingState, PermissionDenied } from './location-states';
+import { PlaceCard } from './place-card';
 
 export const NearbyExplorer = (): JSX.Element => {
   const { colors, scheme } = useTheme();
@@ -41,6 +42,7 @@ export const NearbyExplorer = (): JSX.Element => {
         <NearbyMap />
       </View>
       <View style={[styles.panel, { backgroundColor: colors.bgCard, borderColor: colors.border }]}>
+        <PlaceCard />
         <NearbyList />
       </View>
     </View>

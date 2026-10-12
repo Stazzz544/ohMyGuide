@@ -91,10 +91,11 @@ sample({
   target: [$origin, fetchNearestFx],
 });
 
+// Выбор не сбрасываем: при ходьбе по маршруту поиск перезапускается каждые 300 м
 sample({
   clock: searchRequested,
   fn: () => null,
-  target: [$selectedId, $error],
+  target: $error,
 });
 
 const cellChanged = sample({

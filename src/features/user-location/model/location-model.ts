@@ -1,6 +1,7 @@
 import { combine, createEffect, createEvent, createStore, sample } from 'effector';
 import { Linking } from 'react-native';
 import * as Location from 'expo-location';
+import { withTimeout } from '@app/shared/lib';
 
 import type { GeoPoint } from '@app/shared/lib';
 
@@ -24,20 +25,17 @@ const toGeoPoint = ({ coords }: Location.LocationObject): GeoPoint => ({
   lon: coords.longitude,
 });
 
-// getCurrentPositionAsync не умеет таймаут и без сигнала GPS ждёт бесконечно
-const waitForTimeout = (ms: number): Promise<never> =>
-  new Promise((_, reject) => setTimeout(() => reject(new Error('POSITION_TIMEOUT')), ms));
-
 const getPositionFx = createEffect(async (): Promise<GeoPoint> => {
   const recent = await Location.getLastKnownPositionAsync({ maxAge: LAST_KNOWN_MAX_AGE_MS });
   if (recent) {
     return toGeoPoint(recent);
   }
   try {
-    const current = await Promise.race([
+    // getCurrentPositionAsync не умеет таймаут и без сигнала GPS ждёт бесконечно
+    const current = await withTimeout(
       Location.getCurrentPositionAsync({ accuracy: Location.Accuracy.High }),
-      waitForTimeout(POSITION_TIMEOUT_MS),
-    ]);
+      POSITION_TIMEOUT_MS,
+    );
     return toGeoPoint(current);
   } catch (error) {
     // В помещении GPS может не поймать спутники: старая точка лучше, чем пустой экран
@@ -53,6 +51,26 @@ const openSettingsFx = createEffect(async (): Promise<void> => {
   await Linking.openSettings();
 });
 
+const TRACKING_DISTANCE_M = 10;
+
+const positionWatched = createEvent<GeoPoint>();
+
+// Подписка — нативный ресурс, в стор её не кладём
+let watchSubscription: Location.LocationSubscription | null = null;
+
+const startTrackingFx = createEffect(async (): Promise<void> => {
+  watchSubscription?.remove();
+  watchSubscription = await Location.watchPositionAsync(
+    { accuracy: Location.Accuracy.High, distanceInterval: TRACKING_DISTANCE_M },
+    (location) => positionWatched(toGeoPoint(location)),
+  );
+});
+
+const stopTrackingFx = createEffect((): void => {
+  watchSubscription?.remove();
+  watchSubscription = null;
+});
+
 const $permission = createStore<LocationPermission>('unknown');
 const $canAskAgain = createStore<boolean>(true);
 const $position = createStore<GeoPoint | null>(null);
@@ -65,6 +83,8 @@ const $isLocating = combine(
 
 const locationRequested = createEvent();
 const settingsOpened = createEvent();
+const trackingStarted = createEvent();
+const trackingStopped = createEvent();
 
 sample({
   clock: locationRequested,
@@ -96,8 +116,20 @@ sample({
 });
 
 sample({
-  clock: getPositionFx.doneData,
+  clock: [getPositionFx.doneData, positionWatched],
   target: $position,
+});
+
+sample({
+  clock: trackingStarted,
+  source: $permission,
+  filter: (permission) => permission === 'granted',
+  target: startTrackingFx,
+});
+
+sample({
+  clock: trackingStopped,
+  target: stopTrackingFx,
 });
 
 sample({
@@ -119,4 +151,6 @@ export const locationModel = {
   $isLocating,
   locationRequested,
   settingsOpened,
+  trackingStarted,
+  trackingStopped,
 };
