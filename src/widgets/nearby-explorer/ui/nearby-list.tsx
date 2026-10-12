@@ -1,10 +1,11 @@
 import { FlatList, Pressable, RefreshControl, ScrollView, StyleSheet, Text, View } from 'react-native';
 import { JSX, useCallback, useEffect, useRef } from 'react';
 import { useUnit } from 'effector-react';
+import { Ionicons } from '@expo/vector-icons';
 import { useTheme } from '@app/shared/theme';
 import { Button, ErrorMessage, Skeleton } from '@app/shared/ui';
 import { NEARBY_RADIUS_OPTIONS_M } from '@app/shared/config';
-import { formatRadius, pluralize } from '@app/shared/lib';
+import { formatRadius } from '@app/shared/lib';
 import { PLACE_KIND_LABELS, PlaceRow } from '@app/entities/place';
 import { nearbyModel } from '@app/features/nearby-places';
 import { explorerModel } from '../model/explorer-model';
@@ -13,16 +14,15 @@ import type { ListRenderItem } from 'react-native';
 import type { Place, PlaceKind, PlaceSort } from '@app/entities/place';
 import type { SearchMode } from '@app/features/nearby-places';
 
-const PLACE_FORMS = { one: 'место', few: 'места', many: 'мест' };
 const SKELETON_ROWS = 5;
 const KINDS = Object.keys(PLACE_KIND_LABELS) as PlaceKind[];
 const ATTRIBUTION =
   'Места: Wikidata и Википедия · фото: Wikimedia Commons · маршруты: OSRM · карта: OpenFreeMap, © OpenStreetMap';
 
-const SORT_OPTIONS: Array<{ value: PlaceSort; label: string }> = [
-  { value: 'distance', label: 'Ближе' },
-  { value: 'fame', label: 'Известнее' },
-];
+const SORT_LABELS: Record<PlaceSort, string> = {
+  distance: 'Ближе',
+  fame: 'Известнее',
+};
 
 type AreaState = {
   searchMode: SearchMode;
@@ -57,17 +57,6 @@ const getAreaStatus = (state: AreaState): string | null => {
   return state.sightsError ? 'Wikidata не ответила, показаны ближайшие статьи Википедии' : null;
 };
 
-const getTitle = (searchMode: SearchMode, count: number, radius: number, cityName: string | null): string => {
-  const places = pluralize(count, PLACE_FORMS);
-  if (searchMode === 'city') {
-    return count > 0 && cityName ? `${places} · ${cityName}` : (cityName ?? 'Весь город');
-  }
-  if (searchMode === 'free') {
-    return count > 0 ? `${places} в кадре` : 'Места на карте';
-  }
-  return count > 0 ? `${places} в радиусе ${formatRadius(radius)}` : 'Места рядом';
-};
-
 const getEmptyText = (searchMode: SearchMode, radius: number): string => {
   if (searchMode === 'city') {
     return 'В границах города не нашлось достопримечательностей со статьёй в Википедии';
@@ -82,9 +71,10 @@ type ChipProps = {
   label: string;
   isActive: boolean;
   onPress: () => void;
+  icon?: 'swap-vertical';
 };
 
-const Chip = ({ label, isActive, onPress }: ChipProps): JSX.Element => {
+const Chip = ({ label, isActive, onPress, icon }: ChipProps): JSX.Element => {
   const { colors } = useTheme();
 
   return (
@@ -98,6 +88,7 @@ const Chip = ({ label, isActive, onPress }: ChipProps): JSX.Element => {
         isActive && { backgroundColor: colors.textPrimary, borderColor: colors.textPrimary },
       ]}
     >
+      {icon && <Ionicons name={icon} size={14} color={isActive ? colors.bgPrimary : colors.textSecondary} />}
       <Text style={[styles.chipLabel, { color: isActive ? colors.bgPrimary : colors.textSecondary }]}>{label}</Text>
     </Pressable>
   );
@@ -124,7 +115,6 @@ export const NearbyList = (): JSX.Element => {
     radius,
     radiusChanged,
     searchMode,
-    city,
     cityError,
     isCityLoading,
     isFreeLoading,
@@ -149,7 +139,6 @@ export const NearbyList = (): JSX.Element => {
     radius: nearbyModel.$radius,
     radiusChanged: nearbyModel.radiusChanged,
     searchMode: nearbyModel.$searchMode,
-    city: nearbyModel.$city,
     cityError: nearbyModel.$cityError,
     isCityLoading: nearbyModel.$isCityLoading,
     isFreeLoading: nearbyModel.$isFreeLoading,
@@ -180,7 +169,6 @@ export const NearbyList = (): JSX.Element => {
 
   const isRadiusMode = searchMode === 'radius';
   const nextRadius = isRadiusMode ? NEARBY_RADIUS_OPTIONS_M.find((option) => option > radius) : undefined;
-  const title = getTitle(searchMode, places.length, radius, city?.name ?? null);
   const status = getAreaStatus({
     searchMode,
     isSightsLoading,
@@ -202,32 +190,28 @@ export const NearbyList = (): JSX.Element => {
   return (
     <View style={styles.container}>
       <View style={[styles.header, { borderBottomColor: colors.border }]}>
-        <View style={styles.titleRow}>
-          <Text style={[styles.title, { color: colors.textPrimary }]}>{title}</Text>
-          <View style={styles.chips}>
-            {SORT_OPTIONS.map((option) => (
-              <Chip
-                key={option.value}
-                label={option.label}
-                isActive={sort === option.value}
-                onPress={() => sortChanged(option.value)}
-              />
-            ))}
-          </View>
-        </View>
-        {kinds.length > 1 && (
-          <ScrollView horizontal showsHorizontalScrollIndicator={false} contentContainerStyle={styles.chips}>
-            <Chip label="Все" isActive={activeKind === 'all'} onPress={() => kindChanged('all')} />
-            {kinds.map((item) => (
-              <Chip
-                key={item}
-                label={`${PLACE_KIND_LABELS[item]} · ${kindCounts[item] ?? 0}`}
-                isActive={activeKind === item}
-                onPress={() => kindChanged(item)}
-              />
-            ))}
-          </ScrollView>
-        )}
+        <ScrollView horizontal showsHorizontalScrollIndicator={false} contentContainerStyle={styles.chips}>
+          <Chip
+            icon="swap-vertical"
+            label={SORT_LABELS[sort]}
+            isActive={false}
+            onPress={() => sortChanged(sort === 'distance' ? 'fame' : 'distance')}
+          />
+          {kinds.length > 1 && (
+            <>
+              <View style={[styles.divider, { backgroundColor: colors.border }]} />
+              <Chip label="Все" isActive={activeKind === 'all'} onPress={() => kindChanged('all')} />
+              {kinds.map((item) => (
+                <Chip
+                  key={item}
+                  label={`${PLACE_KIND_LABELS[item]} · ${kindCounts[item] ?? 0}`}
+                  isActive={activeKind === item}
+                  onPress={() => kindChanged(item)}
+                />
+              ))}
+            </>
+          )}
+        </ScrollView>
         {status && <Text style={[styles.status, { color: colors.textSecondary }]}>{status}</Text>}
       </View>
 
@@ -297,27 +281,25 @@ const styles = StyleSheet.create({
   },
   header: {
     paddingHorizontal: 16,
-    paddingTop: 14,
-    paddingBottom: 10,
+    paddingTop: 8,
+    paddingBottom: 8,
     gap: 6,
     borderBottomWidth: StyleSheet.hairlineWidth,
   },
-  titleRow: {
-    flexDirection: 'row',
-    flexWrap: 'wrap',
-    alignItems: 'center',
-    justifyContent: 'space-between',
-    gap: 8,
-  },
-  title: {
-    fontSize: 16,
-    fontWeight: '600',
-  },
   chips: {
     flexDirection: 'row',
+    alignItems: 'center',
     gap: 6,
   },
+  divider: {
+    width: StyleSheet.hairlineWidth,
+    alignSelf: 'stretch',
+    marginHorizontal: 2,
+  },
   chip: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: 4,
     paddingHorizontal: 12,
     paddingVertical: 5,
     borderRadius: 999,

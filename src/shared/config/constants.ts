@@ -23,10 +23,10 @@ export const STORAGE_KEYS = {
   THEME_OVERRIDE: 'ohmyguide_theme',
   AI_MODEL: 'ohmyguide_ai_model',
   AI_API_KEY: 'ohmyguide_ai_api_key',
-  NEARBY_SIGHTS_CACHE: 'ohmyguide_nearby_sights_v2',
+  NEARBY_SIGHTS_CACHE: 'ohmyguide_nearby_sights_v4',
   NEARBY_RADIUS: 'ohmyguide_nearby_radius',
   NEARBY_SEARCH_MODE: 'ohmyguide_nearby_search_mode',
-  CITY_SIGHTS_CACHE: 'ohmyguide_city_sights_v1',
+  CITY_SIGHTS_CACHE: 'ohmyguide_city_sights_v3',
   FAVORITES: 'ohmyguide_favorites',
   FAVORITE_GROUPS: 'ohmyguide_favorite_groups',
 } as const;
@@ -54,6 +54,7 @@ export const TOUR_SYSTEM_PROMPT = `Ты — профессиональный э�
 - ТОЛЬКО обычный текст, без markdown-символов (звездочки, решетки, подчеркивания, тире для списков)
 - Сплошной текст, абзацы разделены двойным переносом строки
 - Никаких символов, которые могут быть прочитаны вслух
+- Не называй координаты, почтовый адрес, улицу и номер дома, даже если они есть в запросе
 
 ГЛАВНЫЙ ПРИНЦИП — ФАКТЫ, А НЕ ВОДА:
 - Каждое предложение должно нести конкретную информацию: дату, имя, событие, число, деталь
@@ -76,7 +77,7 @@ export const TOUR_SYSTEM_PROMPT = `Ты — профессиональный э�
   7. Как место менялось: что было раньше, что перестроили, что утрачено
 
 СТРУКТУРА:
-1. Краткое представление места (1 абзац). Где находимся, когда построено/основано, кем и зачем. Без лирики.
+1. Краткое представление места (1 абзац). Начни с самого яркого факта: что это за место и чем оно знаменито, когда и кем создано. Без лирики и без перечисления адреса.
 
 2. История создания (2-3 абзаца). Кто заказал, кто строил/создавал, при каких обстоятельствах. Конкретные даты, имена архитекторов, инженеров, заказчиков. Сколько стоило, сколько строилось, какие трудности были.
 

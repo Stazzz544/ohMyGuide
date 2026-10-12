@@ -5,7 +5,9 @@ import type { GeoBounds, GeoPoint } from '@app/shared/lib';
 const WDQS_URL = 'https://query.wikidata.org/sparql';
 const SIGHTS_TIMEOUT_MS = 45_000;
 const THUMBNAIL_WIDTH = 160;
-const AROUND_MIN_SITELINKS = 8;
+// Мусор отсекает фильтр по классам места, а не порог известности: иначе в небольших городах из Wikidata
+// проходит одно-два места, и список добирается случайными статьями
+const AROUND_MIN_SITELINKS = 3;
 
 export type WikidataSight = {
   id: string;
@@ -16,6 +18,9 @@ export type WikidataSight = {
   lon: number;
   sitelinks: number;
   image: string | null;
+  types: string[];
+  conservationStates: string[];
+  hasHeritageStatus: boolean;
 };
 
 type SparqlValue = { value: string };
@@ -29,6 +34,9 @@ type SparqlRow = {
   title: SparqlValue;
   sitelinks: SparqlValue;
   image?: SparqlValue;
+  types?: SparqlValue;
+  states?: SparqlValue;
+  heritage?: SparqlValue;
 };
 
 type SparqlResponse = {
@@ -55,22 +63,28 @@ const boxClause = ([west, south, east, north]: GeoBounds): string => `SERVICE wi
   }`;
 
 // Классы: сооружение, музей, парк, памятник, площадь, достопримечательность, археологический объект.
-// Минус — станции метро и улицы
+// Минус — станции метро и улицы. Прямые классы (P31), состояние сохранности (P5816) и статус наследия (P1435)
+// нужны клиентскому фильтру мусора;
+// при GROUP BY метки задаются явно — автоматические ?itemLabel сервис в группировке не отдаёт
 const buildSightsQuery = (
   area: string,
   minSitelinks: number,
-): string => `SELECT ?item ?itemLabel ?itemDescription ?lat ?lon ?title ?sitelinks ?image WHERE {
+): string => `SELECT ?item ?itemLabel ?itemDescription ?sitelinks (SAMPLE(?coordLat) AS ?lat) (SAMPLE(?coordLon) AS ?lon) (SAMPLE(?articleTitle) AS ?title) (SAMPLE(?picture) AS ?image) (GROUP_CONCAT(DISTINCT STRAFTER(STR(?type), "entity/"); separator=" ") AS ?types) (GROUP_CONCAT(DISTINCT STRAFTER(STR(?state), "entity/"); separator=" ") AS ?states) (SAMPLE(?heritageStatus) AS ?heritage) WHERE {
   ${area}
   ?item wikibase:sitelinks ?sitelinks .
   FILTER(?sitelinks >= ${minSitelinks})
-  ?article schema:about ?item ; schema:isPartOf <https://ru.wikipedia.org/> ; schema:name ?title .
+  ?article schema:about ?item ; schema:isPartOf <https://ru.wikipedia.org/> ; schema:name ?articleTitle .
   FILTER EXISTS { ?item wdt:P31/wdt:P279* ?class . VALUES ?class { wd:Q811979 wd:Q33506 wd:Q22698 wd:Q4989906 wd:Q174782 wd:Q570116 wd:Q839954 } }
-  MINUS { ?item wdt:P31 ?type . VALUES ?type { wd:Q928830 wd:Q79007 } }
-  OPTIONAL { ?item wdt:P18 ?image }
-  BIND(geof:latitude(?coord) AS ?lat)
-  BIND(geof:longitude(?coord) AS ?lon)
-  SERVICE wikibase:label { bd:serviceParam wikibase:language "ru". }
+  MINUS { ?item wdt:P31 ?excludedType . VALUES ?excludedType { wd:Q928830 wd:Q79007 } }
+  OPTIONAL { ?item wdt:P31 ?type }
+  OPTIONAL { ?item wdt:P5816 ?state }
+  OPTIONAL { ?item wdt:P1435 ?heritageStatus }
+  OPTIONAL { ?item wdt:P18 ?picture }
+  BIND(geof:latitude(?coord) AS ?coordLat)
+  BIND(geof:longitude(?coord) AS ?coordLon)
+  SERVICE wikibase:label { bd:serviceParam wikibase:language "ru". ?item rdfs:label ?itemLabel . ?item schema:description ?itemDescription . }
 }
+GROUP BY ?item ?itemLabel ?itemDescription ?sitelinks
 ORDER BY DESC(?sitelinks)
 LIMIT 200`;
 
@@ -86,6 +100,9 @@ const toSight = (row: SparqlRow): WikidataSight => {
     lon: Number(row.lon.value),
     sitelinks: Number(row.sitelinks.value),
     image: row.image ? `${row.image.value.replace(/^http:/, 'https:')}?width=${THUMBNAIL_WIDTH}` : null,
+    types: (row.types?.value ?? '').split(' ').filter(Boolean),
+    conservationStates: (row.states?.value ?? '').split(' ').filter(Boolean),
+    hasHeritageStatus: row.heritage !== undefined,
   };
 };
 

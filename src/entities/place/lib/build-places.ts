@@ -1,5 +1,6 @@
 import { distanceM } from '@app/shared/lib';
 import { detectPlaceKind } from './place-kind';
+import { isNotableSight } from './sight-quality';
 
 import type { WikiNearbyPage, WikidataSight } from '@app/shared/api';
 import type { GeoPoint } from '@app/shared/lib';
@@ -7,10 +8,7 @@ import type { Place, PlaceSort } from '../model/types';
 
 // \b в JS работает только для латиницы, поэтому конец слова по кириллице — через lookahead
 const NOT_SIGHTS_PATTERN =
-  /(станци[яи] метро|\(станция|улица|переулок|проезд|тупик|шоссе|проспект|бульвар|набережная|район(?![а-яё])|округ(?![а-яё])|^список)/i;
-
-// Статьи без категории (здания, учреждения) берём, только если известных мест мало — небольшой город
-const MIN_SIGHTS_WITHOUT_UNCATEGORIZED = 15;
+  /(станци[яи] метро|\(станция|улица|переулок|проезд|тупик|шоссе|проспект|бульвар|набережная|район(?![а-яё])|округ(?![а-яё])|^список|^сквер)/i;
 
 type BuildPlacesParams = {
   origin: GeoPoint;
@@ -58,18 +56,21 @@ const comparePlaces =
   };
 
 export const buildPlaces = ({ origin, isInside, sights, nearest, sort }: BuildPlacesParams): Place[] => {
-  const known = sights.map((sight) => fromSight(sight, origin)).filter(isInside);
+  const known = sights
+    .map((sight) => ({ sight, place: fromSight(sight, origin) }))
+    .filter(({ sight, place }) => isInside(place) && isNotableSight(sight, place.kind))
+    .map(({ place }) => place);
 
   // Ближайшие статьи объединяем с Wikidata всегда, а не только пока она не ответила:
-  // иначе список зависит от того, пришёл ли ответ из кэша, и места то появляются, то пропадают
-  const withUncategorized = known.length < MIN_SIGHTS_WITHOUT_UNCATEGORIZED;
+  // иначе список зависит от того, пришёл ли ответ из кэша, и места то появляются, то пропадают.
+  // Статьи без категории — заводы, школы, учреждения — не берём совсем
   const knownTitles = new Set(known.map((place) => place.title.toLowerCase()));
   const extra = nearest
     .map((page) => fromWikiPage(page, origin))
     .filter(
       (place) =>
         isInside(place) &&
-        (withUncategorized || place.kind !== 'other') &&
+        place.kind !== 'other' &&
         !knownTitles.has(place.title.toLowerCase()) &&
         !NOT_SIGHTS_PATTERN.test(`${place.title} ${place.description}`),
     );

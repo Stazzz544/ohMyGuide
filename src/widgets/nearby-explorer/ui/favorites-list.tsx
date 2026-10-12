@@ -3,7 +3,6 @@ import { JSX, useCallback, useMemo, useState } from 'react';
 import { useUnit } from 'effector-react';
 import { Ionicons } from '@expo/vector-icons';
 import { useTheme } from '@app/shared/theme';
-import { pluralize } from '@app/shared/lib';
 import { PLACE_KIND_LABELS, PlaceRow } from '@app/entities/place';
 import { favoriteToPlace, favoritesStore } from '@app/entities/favorite';
 import { locationModel } from '@app/features/user-location';
@@ -28,7 +27,6 @@ type GroupEditorState = {
   group: FavoriteGroup | null;
 };
 
-const PLACE_FORMS = { one: 'место', few: 'места', many: 'мест' };
 const KINDS = Object.keys(PLACE_KIND_LABELS) as PlaceKind[];
 
 const GROUPING_OPTIONS: Array<{ value: Grouping; label: string }> = [
@@ -126,13 +124,34 @@ export const FavoritesList = (): JSX.Element => {
     [colors],
   );
 
-  const title = favorites.length > 0 ? `${pluralize(favorites.length, PLACE_FORMS)} в избранном` : 'Избранное';
-
   return (
     <View style={styles.container}>
       <View style={[styles.header, { borderBottomColor: colors.border }]}>
-        <View style={styles.titleRow}>
-          <Text style={[styles.title, { color: colors.textPrimary }]}>{title}</Text>
+        <View style={styles.headerRow}>
+          <View style={styles.chips}>
+            {favorites.length > 0 &&
+              GROUPING_OPTIONS.map((option) => {
+                const isActive = grouping === option.value;
+
+                return (
+                  <Pressable
+                    key={option.value}
+                    onPress={() => setGrouping(option.value)}
+                    accessibilityRole="button"
+                    accessibilityState={{ selected: isActive }}
+                    style={[
+                      styles.chip,
+                      { borderColor: colors.border },
+                      isActive && { backgroundColor: colors.textPrimary, borderColor: colors.textPrimary },
+                    ]}
+                  >
+                    <Text style={[styles.chipLabel, { color: isActive ? colors.bgPrimary : colors.textSecondary }]}>
+                      {option.label}
+                    </Text>
+                  </Pressable>
+                );
+              })}
+          </View>
           <Pressable
             onPress={() => setGroupEditor({ group: null })}
             accessibilityRole="button"
@@ -142,31 +161,6 @@ export const FavoritesList = (): JSX.Element => {
             <Text style={[styles.chipLabel, { color: colors.primary }]}>Группа</Text>
           </Pressable>
         </View>
-        {favorites.length > 0 && (
-          <View style={styles.chips}>
-            {GROUPING_OPTIONS.map((option) => {
-              const isActive = grouping === option.value;
-
-              return (
-                <Pressable
-                  key={option.value}
-                  onPress={() => setGrouping(option.value)}
-                  accessibilityRole="button"
-                  accessibilityState={{ selected: isActive }}
-                  style={[
-                    styles.chip,
-                    { borderColor: colors.border },
-                    isActive && { backgroundColor: colors.textPrimary, borderColor: colors.textPrimary },
-                  ]}
-                >
-                  <Text style={[styles.chipLabel, { color: isActive ? colors.bgPrimary : colors.textSecondary }]}>
-                    {option.label}
-                  </Text>
-                </Pressable>
-              );
-            })}
-          </View>
-        )}
       </View>
 
       {favorites.length === 0 && (
@@ -198,25 +192,20 @@ const styles = StyleSheet.create({
   },
   header: {
     paddingHorizontal: 16,
-    paddingTop: 14,
-    paddingBottom: 10,
-    gap: 8,
+    paddingTop: 8,
+    paddingBottom: 8,
     borderBottomWidth: StyleSheet.hairlineWidth,
   },
-  titleRow: {
+  headerRow: {
     flexDirection: 'row',
-    flexWrap: 'wrap',
     alignItems: 'center',
     justifyContent: 'space-between',
     gap: 8,
   },
-  title: {
-    fontSize: 16,
-    fontWeight: '600',
-  },
   chips: {
     flexDirection: 'row',
     flexWrap: 'wrap',
+    flexShrink: 1,
     gap: 6,
   },
   chip: {

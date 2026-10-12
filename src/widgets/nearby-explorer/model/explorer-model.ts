@@ -67,6 +67,7 @@ const openArticleFx = createEffect(async (title: string): Promise<void> => {
 const $mapStyles = createStore<MapStyles>({});
 const $isRefreshing = createStore<boolean>(false);
 const $panelMode = createStore<PanelMode>('nearby');
+const $isListExpanded = createStore<boolean>(false);
 const $isPreparingTour = collectPlaceContextFx.pending;
 // Точность GPS в городе 5–20 м, поэтому «на месте» считаем с запасом
 const $isArrived = combine(
@@ -85,6 +86,7 @@ const tourRequested = createEvent();
 const navigatorOpened = createEvent();
 const articleOpened = createEvent();
 const panelModeChanged = createEvent<PanelMode>();
+const listExpandToggled = createEvent();
 
 const positionUpdated = sample({
   clock: locationModel.$position.updates,
@@ -230,12 +232,20 @@ sample({
   target: $panelMode,
 });
 
+sample({
+  clock: listExpandToggled,
+  source: $isListExpanded,
+  fn: (isExpanded) => !isExpanded,
+  target: $isListExpanded,
+});
+
 export const explorerModel = {
   $mapStyles,
   $isRefreshing,
   $isPreparingTour,
   $isArrived,
   $panelMode,
+  $isListExpanded,
   explorerOpened,
   refreshed,
   mapStyleRequested,
@@ -244,4 +254,5 @@ export const explorerModel = {
   navigatorOpened,
   articleOpened,
   panelModeChanged,
+  listExpandToggled,
 };

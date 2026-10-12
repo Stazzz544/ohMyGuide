@@ -14,14 +14,27 @@ import { LocatingState, PermissionDenied } from './location-states';
 import { PlaceCard } from './place-card';
 import { RadiusSwitch } from './radius-switch';
 
+// Полоса карты при развёрнутом списке: в ней остаётся место для переключателя радиуса
+const MAP_COLLAPSED_HEIGHT = 150;
+
 export const NearbyExplorer = (): JSX.Element => {
   const { colors, scheme } = useTheme();
-  const { permission, position, locationError, selectedPlace, panelMode, explorerOpened, mapStyleRequested } = useUnit({
+  const {
+    permission,
+    position,
+    locationError,
+    selectedPlace,
+    panelMode,
+    isListExpanded,
+    explorerOpened,
+    mapStyleRequested,
+  } = useUnit({
     permission: locationModel.$permission,
     position: locationModel.$position,
     locationError: locationModel.$error,
     selectedPlace: nearbyModel.$selectedPlace,
     panelMode: explorerModel.$panelMode,
+    isListExpanded: explorerModel.$isListExpanded,
     explorerOpened: explorerModel.explorerOpened,
     mapStyleRequested: explorerModel.mapStyleRequested,
   });
@@ -48,7 +61,7 @@ export const NearbyExplorer = (): JSX.Element => {
   // скролл), и flex-стиль его панели не переключаем: Yoga после такого переключения раскладывала панель неверно
   return (
     <View style={[styles.container, { backgroundColor: colors.bgSecondary }]}>
-      <View style={styles.map}>
+      <View style={isListExpanded && !isPlaceSelected ? styles.mapCollapsed : styles.map}>
         <NearbyMap />
         {!isPlaceSelected && <RadiusSwitch />}
       </View>
@@ -85,6 +98,11 @@ const styles = StyleSheet.create({
     flexGrow: 1.1,
     flexShrink: 1,
     flexBasis: 0,
+  },
+  mapCollapsed: {
+    flexGrow: 0,
+    flexShrink: 0,
+    height: MAP_COLLAPSED_HEIGHT,
   },
   panel: {
     marginTop: -CARD_BORDER_RADIUS,

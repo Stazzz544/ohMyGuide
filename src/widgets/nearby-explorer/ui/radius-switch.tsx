@@ -22,9 +22,10 @@ const AREA_OPTIONS: Array<{ searchMode: Exclude<SearchMode, 'radius'>; label: st
 
 export const RadiusSwitch = (): JSX.Element => {
   const { colors } = useTheme();
-  const { radius, searchMode, radiusChanged, searchModeChanged } = useUnit({
+  const { radius, searchMode, city, radiusChanged, searchModeChanged } = useUnit({
     radius: nearbyModel.$radius,
     searchMode: nearbyModel.$searchMode,
+    city: nearbyModel.$city,
     radiusChanged: nearbyModel.radiusChanged,
     searchModeChanged: nearbyModel.searchModeChanged,
   });
@@ -38,7 +39,7 @@ export const RadiusSwitch = (): JSX.Element => {
     })),
     ...AREA_OPTIONS.map((option) => ({
       key: option.searchMode,
-      label: option.label,
+      label: option.searchMode === 'city' && searchMode === 'city' && city ? city.name : option.label,
       isActive: searchMode === option.searchMode,
       onPress: () => searchModeChanged(option.searchMode),
     })),
