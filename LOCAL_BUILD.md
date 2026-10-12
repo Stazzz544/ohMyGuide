@@ -64,7 +64,28 @@ E:\cooding\mobile\OhMyGuide\android\app\build\outputs\apk\release\app-release.ap
 
 При сборке через `npm run build:apk` тот же файл называется `oh-my-guide.apk`.
 
-Размер ~75 МБ (фактически собиралось 78 173 033 байт).
+Размер ~120 МБ (12.10.2026 — 123 656 786 байт): внутри нативные библиотеки под четыре архитектуры.
+
+## Отправка APK в Telegram-канал
+
+`npm run build:apk` после сборки сам отправляет APK в канал, если настроен `.env.local`. Без настройки отправка пропускается, сборка не падает. Собрать без отправки — `npm run build:apk -- --no-upload`, отправить уже собранный APK — `npm run upload:apk`.
+
+Bot API принимает файлы только до 50 МБ, поэтому отправка идёт через MTProto (пакет `telegram`, до 2 ГБ). Настройка один раз:
+
+1. `npm install --save-dev telegram`.
+2. В [@BotFather](https://t.me/BotFather) — `/newbot`, сохранить токен.
+3. Добавить бота администратором канала с правом «Публикация сообщений».
+4. На [my.telegram.org](https://my.telegram.org) → API development tools — создать приложение, взять `api_id` и `api_hash`.
+5. Создать `.env.local` в корне проекта (он в `.gitignore`):
+   ```
+   TELEGRAM_API_ID=1234567
+   TELEGRAM_API_HASH=0123456789abcdef0123456789abcdef
+   TELEGRAM_BOT_TOKEN=123456789:AA...
+   TELEGRAM_CHANNEL_ID=
+   ```
+6. Опубликовать в канале любое сообщение и выполнить `npm run upload:apk -- --find-channel` — скрипт напишет `TELEGRAM_CHANNEL_ID=-100…`, вписать его в `.env.local`.
+
+Файл в канале называется `oh-my-guide-<версия>-<коммит>.apk`, в подписи — ветка, коммит, его заголовок и время сборки. После первого входа бота рядом появляется `.telegram-session` (в `.gitignore`): с ним следующие отправки не логинятся заново.
 
 ## Возможные проблемы
 

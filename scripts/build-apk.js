@@ -49,3 +49,10 @@ fs.renameSync(GRADLE_APK_PATH, APK_PATH);
 
 const sizeMb = (fs.statSync(APK_PATH).size / 1024 / 1024).toFixed(1);
 console.log(`\n[build-apk] Готово: ${APK_PATH} (${sizeMb} МБ)`);
+
+if (!process.argv.includes('--no-upload')) {
+  const upload = spawnSync('node', [path.join(__dirname, 'upload-apk-telegram.js')], { cwd: PROJECT_ROOT, stdio: 'inherit' });
+  if (upload.status !== 0) {
+    fail('APK собран, но в Telegram не ушёл. Повторить отправку: npm run upload:apk');
+  }
+}
