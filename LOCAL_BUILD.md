@@ -2,12 +2,20 @@
 
 Точная воспроизводимая инструкция — собрано таким способом и работает.
 
+## Быстрый способ
+
+```powershell
+npm run build:apk
+```
+
+Скрипт [scripts/build-apk.js](scripts/build-apk.js) выполняет шаги 1 и 3 сам: берёт `JAVA_HOME` / `ANDROID_HOME` из окружения, а если они не заданы — JBR из Android Studio и `%LOCALAPPDATA%\Android\Sdk`; при отсутствии `android/` запускает `npx expo prebuild`, при отсутствии `android/local.properties` создаёт его. Шаг 2 (`prebuild --clean` после правок `app.config.ts`) — по-прежнему вручную. Ниже — то же самое руками.
+
 ## Предварительные требования (ставится один раз)
 
 - Android Studio установлена (даёт JDK + Android SDK).
 - Node.js + npm установлены.
 - Зависимости проекта установлены: `npm install`.
-- Папка `android/` уже сгенерирована через `npx expo prebuild` (в репозитории есть).
+- Папка `android/` сгенерирована через `npx expo prebuild`. Она в `.gitignore` — после свежего клона её нет, `npm run build:apk` создаст её сам.
 
 ## Шаг 1. Создать `android/local.properties`
 
